@@ -19,6 +19,7 @@ SYSTEM = (
 )
 QUESTION = "What should we add to the autumn menu?"
 QUERY = "autumn menu: the dishes decided for the starter, main, and dessert, the ingredients to buy for each, and what is still undecided"
+SHOPPING_QUERY = "what does the kitchen need to buy"  # so the kitchen's notes clear the search floor on the promote run
 MAX_FINDINGS = 4  # three dishes and one open question; the code holds the line even if the model does not
 
 # A recorded model answer to QUESTION. With no MODEL_PROVIDER set, the chef replays it
@@ -84,10 +85,13 @@ def decide(client, raw: str, source: str) -> None:
 def promote(client) -> None:
     """Move the decided dishes into Shared Knowledge. A rule in code decides which."""
     convo_id = open_trace(client, "chef: share the decided dishes")
-    candidates = call(client, "memory_search", conversation_id=convo_id, query=QUERY)["results"]
+    candidates: dict[str, dict] = {}
+    for query in (QUERY, SHOPPING_QUERY):  # two searches, joined by id, so every private record gets a verdict
+        for m in call(client, "memory_search", conversation_id=convo_id, query=query)["results"]:
+            candidates.setdefault(m["id"], m)
 
     approved, verdicts = [], []
-    for m in candidates:
+    for m in candidates.values():
         ok, why = allowed_by_policy(m["memory"])
         verdicts.append(f"{'PROMOTE' if ok else 'KEEP'}: {m['memory'][:70]} ({why})")
         print(f"{'PROMOTE' if ok else 'KEEP   '} {m['memory'][:70]}\n         {why}")

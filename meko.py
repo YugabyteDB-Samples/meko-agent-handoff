@@ -18,7 +18,13 @@ load_dotenv(os.environ.get("ENV_FILE", ".env"), override=True)
 from meko_client import make_meko_mcp_client
 
 DATAPACK_ID = os.environ.get("MEKO_DATAPACK_ID", "").strip()
-AGENT_ID = os.environ["MEKO_AGENT_ID"]  # the name this script saves under, e.g. chef:menu-demo
+AGENT_ID = os.environ.get("MEKO_AGENT_ID", "").strip()  # the name this script saves under, e.g. chef:menu-demo
+
+if not AGENT_ID:
+    raise SystemExit(
+        "MEKO_AGENT_ID is not set. Prefix the command with the name this script should save under, "
+        "for example: MEKO_AGENT_ID=chef:menu-demo uv run chef.py"
+    )
 
 try:
     uuid.UUID(DATAPACK_ID)
