@@ -1,13 +1,19 @@
-"""Agent 2, the kitchen manager. New process, no local state. Recalls the menu, then writes the shopping list."""
+"""Agent 2, the kitchen manager. New process, no local state. Reads the chef's dishes,
+works out what each one needs, and records that as memories of its own."""
+import json
 import os
+from pathlib import Path
 
-from meko import DATAPACK_ID, call, log_turn, make_meko_mcp_client, open_trace
+from meko import call, log_turn, make_meko_mcp_client, open_trace
 
-TASK = "Write the shopping list for the dishes already decided for the autumn menu."
 QUERY = "autumn menu: the dishes decided for the starter, main, and dessert, the ingredients to buy for each, and what is still undecided"
-# With no MODEL_PROVIDER set, the kitchen manager builds the shopping list from the
-# recalled records instead of asking a model, so the demo runs on a Meko key alone.
-# Every line in that list comes from a record in Meko, labeled with the agent that wrote it.
+SYSTEM = (
+    "You run the kitchen at a small bistro. Given one dish, list the ingredients to buy for "
+    "it, at most five. Return ONLY a JSON list of strings."
+)
+# Ingredients for each dish in chef_example.json, keyed by the dish text. With no
+# MODEL_PROVIDER set, the kitchen manager looks dishes up here instead of asking a model.
+INGREDIENTS_FILE = Path(__file__).with_name("kitchen_manager_example.json")
 
 
 def recall(client, convo_id: str) -> list[dict]:
@@ -29,85 +35,69 @@ def recall(client, convo_id: str) -> list[dict]:
 
 
 def parse_record(text: str) -> dict:
-    """Split a record the chef wrote: KIND: text INGREDIENTS: a, b REASON: reason REJECTED: alternative."""
+    """Split a record the chef wrote: KIND: text REASON: reason REJECTED: alternative."""
     kind, _, rest = text.partition(": ")
     body, _, rejected = rest.partition(" REJECTED: ")
-    body, _, reason = body.partition(" REASON: ")
-    dish, _, ingredients = body.partition(" INGREDIENTS: ")
-    return {"kind": kind, "text": dish, "reason": reason, "rejected": rejected,
-            "ingredients": [i.strip() for i in ingredients.split(",") if i.strip()]}
+    dish, _, reason = body.partition(" REASON: ")
+    return {"kind": kind, "text": dish, "reason": reason, "rejected": rejected}
 
 
-def plural(n: int, word: str, plural_word: str | None = None) -> str:
-    return f"{n} {word if n == 1 else (plural_word or word + 's')}"
-
-
-def format_shopping_list(records: list[dict]) -> str:
-    """Build the shopping list from the records, with no model. Nothing here is invented."""
-    dishes, open_questions, to_buy = [], [], {}
-    for r in records:
-        p = parse_record(r["text"])
-        origin = f"{r['agent']} ({r['scope']})"
-        if p["kind"] == "OPEN_QUESTION":
-            open_questions.append(f"- {p['text']}\n  Why it is open: {p['reason']}\n  Recorded by: {origin}")
-        elif p["kind"] == "DECISION":
-            item = f"- {p['text']}\n  Why: {p['reason']}"
-            if p["rejected"]:
-                item += f"\n  Rejected: {p['rejected']}"
-            dishes.append(item + f"\n  Decided by: {origin}")
-            for ingredient in p["ingredients"]:
-                to_buy.setdefault(ingredient, []).append(p["text"].rstrip("."))
-        else:
-            dishes.append(f"- {r['text']}\n  Recorded by: {origin}")
-
-    parts = ["# Shopping list for the autumn menu", "",
-             f"{plural(len(dishes), 'dish', 'dishes')} decided and "
-             f"{plural(len(open_questions), 'question')} still open were recalled from Meko.", ""]
-    if dishes:
-        parts += ["## Dishes", ""] + dishes + [""]
-    if to_buy:
-        parts += ["## To buy", ""] + [f"- {i} (for: {'; '.join(d)})" for i, d in sorted(to_buy.items())] + [""]
-    if open_questions:
-        parts += ["## Still open, nothing to buy yet", ""] + open_questions + [""]
-    return "\n".join(parts).rstrip()
-
-
-def write(records: list[dict]) -> tuple[str, str]:
-    """Return the shopping list and a note on who wrote it."""
+def ingredients_for(dish: str) -> list[str] | None:
+    """What to buy for one dish: from the model if there is one, otherwise from the recorded list."""
     if not os.environ.get("MODEL_PROVIDER", "").strip():
-        return format_shopping_list(records), "formatted from the records, no model"
+        return json.loads(INGREDIENTS_FILE.read_text()).get(dish)
     from strands import Agent
     from meko_client import make_model
 
-    context = "\n".join(r["text"] for r in records)
-    agent = Agent(model=make_model(), callback_handler=None)  # no streaming to the terminal
-    return str(agent(f"{TASK}\n\nDecisions already made about this menu:\n{context}")), \
-        f"written by the model ({os.environ['MODEL_PROVIDER']})"
+    raw = str(Agent(model=make_model(), system_prompt=SYSTEM, callback_handler=None)(dish))
+    start, end = raw.find("["), raw.rfind("]")  # the JSON list, whatever surrounds it
+    return json.loads(raw[start:end + 1])[:5]
+
+
+def record_ingredients(client, convo_id: str, dish: str, ingredients: list[str]) -> str:
+    """Store the shopping note for one dish as a memory of the kitchen manager's own."""
+    text = f"INGREDIENTS: {dish} NEEDS: {', '.join(ingredients)}"
+    call(client, "memory_add", conversation_id=convo_id, text=text)
+    print(f"recorded: {text[:80]}")
+    return text
 
 
 def main() -> None:
     client = make_meko_mcp_client()
     with client:
-        convo_id = open_trace(client, f"kitchen-manager: shopping list ({DATAPACK_ID[:8]})")
+        convo_id = open_trace(client, "kitchen-manager: what each dish needs")
         records = recall(client, convo_id)
+        dishes = [parse_record(r["text"]) for r in records]
+        dishes = [d for d in dishes if d["kind"] == "DECISION"]
 
-        if not records:
-            log_turn(client, convo_id, "kitchen-manager run", output="Stopped: no recorded decisions found.",
-                     reasoning="Nothing in memory or Shared Knowledge matched, so writing the "
-                               "shopping list would mean inventing a menu.",
-                     plan=["Search memory and Shared Knowledge.", "Stop if both are empty."])
-            print("\nNo recorded decisions found. The kitchen manager would be guessing, so it stops.")
+        if not dishes:
+            log_turn(client, convo_id, "kitchen-manager run", output="Stopped: no decided dishes found.",
+                     reasoning="Nothing in memory or Shared Knowledge is a decided dish, so there is "
+                               "nothing to shop for.",
+                     plan=["Search memory and Shared Knowledge.", "Stop if no dish is decided."])
+            print("\nNo decided dishes found. The kitchen manager would be guessing, so it stops.")
             return
 
-        shopping_list, how = write(records)
-        context = "\n".join(r["text"] for r in records)
+        notes, to_buy = [], {}
+        for d in dishes:
+            ingredients = ingredients_for(d["text"])
+            if not ingredients:
+                print(f"skipped: no recorded ingredients for {d['text']!r}; set MODEL_PROVIDER to work them out")
+                continue
+            notes.append(record_ingredients(client, convo_id, d["text"], ingredients))
+            for i in ingredients:
+                to_buy.setdefault(i, []).append(d["text"].rstrip("."))
+
+        print("\n# To buy for the autumn menu\n")
+        for i, for_dishes in sorted(to_buy.items()):
+            print(f"- {i} (for: {'; '.join(for_dishes)})")
+
         log_turn(client, convo_id, "kitchen-manager run",
-                 output=f"Task: {TASK}\n\nContext used:\n{context}\n\nShopping list ({how}):\n{shopping_list}",
-                 reasoning=f"{len(records)} recorded decisions were found; the shopping list was {how}.",
-                 plan=["Search memory and Shared Knowledge.",
-                       "Build the shopping list from what was found.",
-                       "Post the list and its sources to the trace."])
-        print(f"\n{shopping_list}")
+                 output=f"Dishes found:\n" + "\n".join(d["text"] for d in dishes) + "\n\nRecorded:\n" + "\n".join(notes),
+                 reasoning=f"{len(dishes)} decided dishes were found; one INGREDIENTS memory was written per dish. "
+                           "Open questions were left alone.",
+                 plan=["Search memory and Shared Knowledge.", "Keep only the decided dishes.",
+                       "Work out what each needs and record it with memory_add."])
 
 
 if __name__ == "__main__":
