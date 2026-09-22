@@ -56,7 +56,7 @@ Start from an empty datapack. Steps 1, 2 and 4 run on your key; steps 3 and 5 ru
 
 **1. Record.** `MEKO_AGENT_ID=chef:menu-demo uv run chef.py`
 
-Expect a `trace:` id, then four `recorded:` lines: three `DECISION:` records and one `OPEN_QUESTION:`. The script has no Meko tools in the model's hands; plain Python wrote each finding with `memory_add`, as written. With no model configured the answer is replayed from `chef_example.json`, so the four lines are the same every time.
+Expect a `trace:` id, then four `recorded:` lines: three `DECISION:` records and one `OPEN_QUESTION:`. The script has no Meko tools in the model's hands; plain Python wrote each finding with `memory_add`, as written. With no model configured the answer is the example in `chef_example.json`, so the four lines are the same every time.
 
 **2. Recall on the same account.** `MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py`
 
