@@ -60,7 +60,7 @@ With `MODEL_PROVIDER` empty, the answer comes from `chef_example.json`, so the f
 
 ### 2. The kitchen manager adds the shopping notes
 
-`kitchen_manager.py` is a separate process and shares no state with `chef.py`. It runs under `user_1`, so `memory_search` returns the chef's four records and `knowledgebase_search` returns nothing. It keeps the three `DECISION` records, looks up each dish's ingredients in `kitchen_manager_example.json`, and writes one `INGREDIENTS` record per dish with `memory_add` under its own agent id. Expected output: four rows tagged `chef:menu-demo`, then three `recorded:` lines and the shopping list.
+`kitchen_manager.py` is a separate process and shares no state with `chef.py`. It runs under `user_1`, so `memory_search` returns the chef's four records and `knowledgebase_search` returns nothing. It keeps the three `DECISION` records, looks up each dish's ingredients in `kitchen_manager_example.json`, and writes one `INGREDIENTS` record per dish with `memory_add` under its own agent id. Expected output: `memory: 4 results` with each row tagged `[chef:menu-demo]`, `shared knowledge: 0 results`, then three `recorded:` lines and the shopping list.
 
 ```bash
 MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py
@@ -95,7 +95,7 @@ Memory is scoped to the Meko user account, not to the agent. The `agent_id` on e
 
 ### 3. The restaurant manager finds nothing
 
-`restaurant_manager.py` runs under `user_2` and makes the same two searches. `user_2` cannot read `user_1`'s memory, and nothing has been promoted, so both searches return zero results. The script reports that the menu is not ready and exits without writing. Expected output: zero and zero.
+`restaurant_manager.py` runs under `user_2` and makes the same two searches. `user_2` cannot read `user_1`'s memory, and nothing has been promoted, so both searches return zero results. The script reports that the menu is not ready and exits without writing. Expected output: `memory: 0 results` and `shared knowledge: 0 results`, then the not-ready message.
 
 ```bash
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
@@ -142,7 +142,7 @@ The rule is code and runs under `chef:menu-demo`, so the trace records which age
 
 ### 5. The restaurant manager prints the menu
 
-Same command and account as run 3. `knowledgebase_search` now returns the three promoted records, each tagged `chef:menu-demo`, and the script prints the menu. Expected output: zero in memory, three in Shared Knowledge, then the menu.
+Same command and account as run 3. `knowledgebase_search` now returns the three promoted records, each tagged `chef:menu-demo`, and the script prints the menu. Expected output: `memory: 0 results` and `shared knowledge: 3 results`, then the menu.
 
 ```bash
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
