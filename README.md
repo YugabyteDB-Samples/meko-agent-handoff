@@ -12,7 +12,7 @@ This is the code from the webinar "Shared Memory for AI Coding Agents: A Live Bu
 
 | Word | What it means here |
 | --- | --- |
-| Agent | A Python script that sends a question to a model and does something with the answer. There is no framework magic here. Each agent is under 60 lines. |
+| Agent | A Python script that sends a question to a model and does something with the answer. There is no framework magic here. Each one is a short script you can read top to bottom. |
 | Meko | The service where decisions are stored. Your code talks to it over MCP, a standard way for a program to call tools on a server. |
 | Datapack | Your workspace in Meko. Everything in this repo happens inside one datapack. |
 | Memory | A fact an agent saved. Your memories can be read by every agent you run, and each one records which agent wrote it. Nobody else on the datapack can read them. |
@@ -25,7 +25,7 @@ This is the code from the webinar "Shared Memory for AI Coding Agents: A Live Bu
 | File | What it does |
 | --- | --- |
 | `researcher.py` | Asks the model a question, then saves each decision to Meko with `memory_add`. The model has no Meko tools, so it cannot decide what gets saved. With no `MODEL_PROVIDER` set, it replays the answer in `researcher_example.json` instead of calling a model. |
-| `researcher_example.json` | A recorded model answer to the retry question: three of the ten records a real run returned, two decisions and one open question. The researcher replays this when no model is configured. |
+| `researcher_example.json` | A recorded model answer to the retry question: two decisions and one open question. The researcher replays this when no model is configured. |
 | `writer.py` | Reads your memories with `memory_search` and the team's Shared Knowledge with `knowledgebase_search`, then writes a pull request description. If it finds nothing, it stops instead of guessing. With no `MODEL_PROVIDER` set, it formats the description from the records themselves, and every line names the agent that recorded it. |
 | `orchestrator.py` | Lets an agent decide what to promote. A rule in code decides; with `--judge`, a model reviews what passed the rule. |
 | `promote.py` | Promotes from the terminal, asking you y or n for each memory. |

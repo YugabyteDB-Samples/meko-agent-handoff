@@ -3,10 +3,10 @@ the ones the team should build on. Code sets the guardrail; a model may judge in
 
 Runs as its own agent_id so the trace shows who made the promotion call.
 
-    MEKO_AGENT_ID=orchestrator:retry-demo uv run orchestrator.py            # code only, no model
-    MEKO_AGENT_ID=orchestrator:retry-demo uv run orchestrator.py --judge    # a model judges inside the rule
+    MEKO_AGENT_ID=orchestrator:retry-demo uv run orchestrator.py            # the rule alone, no model
+    MEKO_AGENT_ID=orchestrator:retry-demo uv run orchestrator.py --judge    # a model judges what passed the rule
 
---judge needs MODEL_PROVIDER set. --rules is accepted and means the default.
+--judge needs MODEL_PROVIDER set.
 """
 import json
 import os
@@ -34,6 +34,7 @@ def allowed_by_policy(text: str) -> tuple[bool, str]:
 
 
 def judged_by_model(text: str) -> tuple[bool, str]:
+    """Ask a model whether one record that passed the rule should be shared."""
     from strands import Agent
     from meko_client import make_model
 

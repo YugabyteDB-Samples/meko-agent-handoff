@@ -11,7 +11,7 @@ QUERY = "http_client.py retry behavior: backoff, which status codes to retry, an
 
 
 def recall(client, convo_id: str) -> list[dict]:
-    # --- typed live ---
+    """Ask both scopes: memory_search for your memories, knowledgebase_search for the team's."""
     mine = call(client, "memory_search", conversation_id=convo_id, query=QUERY)["results"]
     team = call(client, "knowledgebase_search", conversation_id=convo_id, query=QUERY)["results"]
 

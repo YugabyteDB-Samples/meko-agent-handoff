@@ -11,25 +11,25 @@ SYSTEM = (
     "text, reason, and rejected (an alternative you ruled out, or null)."
 )
 QUESTION = "How should http_client.py retry failed requests?"
+# A recorded model answer to QUESTION. With no MODEL_PROVIDER set, the researcher
+# replays it instead of calling a model, so all you need is a Meko key.
 REPLAY_FILE = Path(__file__).with_name("researcher_example.json")
-# researcher_example.json holds three of the ten records a real model run returned
-# on 2026-09-21. With no MODEL_PROVIDER set, the sample replays that answer so a
-# follower needs only a Meko key and datapack id. Set MODEL_PROVIDER to call a model.
 
 
 def ask_model(question: str) -> str:
-    """Return the model's raw answer, or replay a recorded one when no model is configured."""
+    """Return the model's answer as text, or the recorded answer when no model is configured."""
     if not os.environ.get("MODEL_PROVIDER", "").strip():
         return REPLAY_FILE.read_text()
     from strands import Agent
     from meko_client import make_model
 
-    agent = Agent(model=make_model(), system_prompt=SYSTEM)  # no Meko tools attached
+    # The model gets no Meko tools, so it cannot save anything. The code below does that.
+    agent = Agent(model=make_model(), system_prompt=SYSTEM)
     return str(agent(question))
 
 
 def record_decision(client, convo_id: str, d: dict) -> None:
-    # --- typed live ---
+    """Turn one finding into a single line of text and store it as written."""
     text = f"{d['kind'].upper()}: {d['text']} REASON: {d['reason']}"
     if d.get("rejected"):
         text += f" REJECTED: {d['rejected']}"
@@ -54,7 +54,7 @@ def main() -> None:
                        "Write each one to memory with memory_add so the wording is kept.",
                        "Leave open questions private until someone settles them."])
         for d in findings:
-            record_decision(client, convo_id, d)  # the code decides, every time
+            record_decision(client, convo_id, d)  # the code writes every finding, every run
 
 
 if __name__ == "__main__":
