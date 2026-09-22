@@ -1,6 +1,11 @@
-"""Agent 1, the chef. Plans the menu, then plain Python records what was decided."""
+"""Agent 1, the chef. Decides the dishes, records them, and later shares the decided ones.
+
+    MEKO_AGENT_ID=chef:menu-demo uv run chef.py             # decide the dishes and record them
+    MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote   # share the decided dishes with the team
+"""
 import json
 import os
+import sys
 from pathlib import Path
 
 from meko import call, log_turn, make_meko_mcp_client, open_trace
@@ -10,10 +15,10 @@ SYSTEM = (
     "Answer the question with exactly four findings: the three dishes you decided to add, "
     "then one question you could not settle. Return ONLY a JSON list of four items. Each "
     "item has: kind ('decision' or 'open_question'), text (the dish and its place on the "
-    "menu, or the question), ingredients (a list of at most five things to buy, or null "
-    "for a question), reason, and rejected (an alternative you ruled out, or null)."
+    "menu, or the question), reason, and rejected (an alternative you ruled out, or null)."
 )
 QUESTION = "What should we add to the autumn menu?"
+QUERY = "autumn menu: the dishes decided for the starter, main, and dessert, the ingredients to buy for each, and what is still undecided"
 MAX_FINDINGS = 4  # three dishes and one open question; the code holds the line even if the model does not
 
 # A recorded model answer to QUESTION. With no MODEL_PROVIDER set, the chef replays it
@@ -43,34 +48,74 @@ def parse_findings(raw: str) -> list[dict]:
 
 def record_decision(client, convo_id: str, d: dict) -> None:
     """Turn one finding into a single line of text and store it as written."""
-    text = f"{d['kind'].upper()}: {d['text']}"
-    if d.get("ingredients"):
-        text += f" INGREDIENTS: {', '.join(d['ingredients'])}"
-    text += f" REASON: {d['reason']}"
+    text = f"{d['kind'].upper()}: {d['text']} REASON: {d['reason']}"
     if d.get("rejected"):
         text += f" REJECTED: {d['rejected']}"
     call(client, "memory_add", conversation_id=convo_id, text=text)
     print(f"recorded: {text[:80]}")
 
 
-def main() -> None:
-    raw = ask_model(QUESTION)
+def allowed_by_policy(text: str) -> tuple[bool, str]:
+    """What the chef is willing to share. Open questions and the kitchen's notes stay private."""
+    if text.startswith("OPEN_QUESTION"):
+        return False, "open questions stay private until settled"
+    if not text.startswith("DECISION"):
+        return False, "only decided dishes go on the menu"
+    if "REASON:" not in text:
+        return False, "a decision without a reason is not ready to share"
+    return True, "decided, with a reason"
+
+
+def decide(client, raw: str, source: str) -> None:
+    """Record every finding from the answer, up to MAX_FINDINGS."""
     findings = parse_findings(raw)[:MAX_FINDINGS]
-    source = "replayed from chef_example.json" if not os.environ.get("MODEL_PROVIDER", "").strip() \
-        else os.environ["MODEL_PROVIDER"]
+    convo_id = open_trace(client, "chef: autumn menu")
+    log_turn(client, convo_id, "chef run",
+             output=f"Question: {QUESTION}\n\nModel answer ({source}):\n{raw}",
+             reasoning=f"The model answered; the code below writes the first {MAX_FINDINGS} "
+                       "findings so the record does not depend on the model choosing to save it.",
+             plan=["Ask the model for dishes, reasons, and rejected alternatives as JSON.",
+                   "Write each one to memory with memory_add so the wording is kept.",
+                   "Leave open questions private until someone settles them."])
+    for d in findings:
+        record_decision(client, convo_id, d)  # the code writes the findings, every run
+
+
+def promote(client) -> None:
+    """Move the decided dishes into Shared Knowledge. A rule in code decides which."""
+    convo_id = open_trace(client, "chef: share the decided dishes")
+    candidates = call(client, "memory_search", conversation_id=convo_id, query=QUERY)["results"]
+
+    approved, verdicts = [], []
+    for m in candidates:
+        ok, why = allowed_by_policy(m["memory"])
+        verdicts.append(f"{'PROMOTE' if ok else 'KEEP'}: {m['memory'][:70]} ({why})")
+        print(f"{'PROMOTE' if ok else 'KEEP   '} {m['memory'][:70]}\n         {why}")
+        if ok:
+            approved.append(m["id"])
+
+    log_turn(client, convo_id, "chef promotion", output="\n".join(verdicts) or "no candidates",
+             reasoning="A rule in code picked the records to share; nothing else was consulted.",
+             plan=["Search private memories.", "Apply the policy.",
+                   "Promote the approved ones with memory_promote."])
+    if approved:
+        print(call(client, "memory_promote", conversation_id=convo_id, memory_ids=approved))
+    else:
+        print("nothing promoted")
+
+
+def main() -> None:
+    if "--promote" not in sys.argv:
+        raw = ask_model(QUESTION)
+        source = "replayed from chef_example.json" if not os.environ.get("MODEL_PROVIDER", "").strip() \
+            else os.environ["MODEL_PROVIDER"]
 
     client = make_meko_mcp_client()
     with client:
-        convo_id = open_trace(client, "chef: autumn menu")
-        log_turn(client, convo_id, "chef run",
-                 output=f"Question: {QUESTION}\n\nModel answer ({source}):\n{raw}",
-                 reasoning=f"The model answered; the code below writes the first {MAX_FINDINGS} "
-                           "findings so the record does not depend on the model choosing to save it.",
-                 plan=["Ask the model for dishes, their ingredients, reasons, and rejected alternatives as JSON.",
-                       "Write each one to memory with memory_add so the wording is kept.",
-                       "Leave open questions private until someone settles them."])
-        for d in findings:
-            record_decision(client, convo_id, d)  # the code writes the findings, every run
+        if "--promote" in sys.argv:
+            promote(client)
+        else:
+            decide(client, raw, source)
 
 
 if __name__ == "__main__":
