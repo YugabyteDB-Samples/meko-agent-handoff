@@ -43,7 +43,7 @@ def parse_record(text: str) -> dict:
 
 
 def ingredients_for(dish: str) -> list[str] | None:
-    """What to buy for one dish: from the model if there is one, otherwise from the recorded list."""
+    """What to buy for one dish: from the model if there is one, otherwise from the example list."""
     if not os.environ.get("MODEL_PROVIDER", "").strip():
         return json.loads(INGREDIENTS_FILE.read_text()).get(dish)
     from strands import Agent
@@ -82,7 +82,7 @@ def main() -> None:
         for d in dishes:
             ingredients = ingredients_for(d["text"])
             if not ingredients:
-                print(f"skipped: no recorded ingredients for {d['text']!r}; set MODEL_PROVIDER to work them out")
+                print(f"skipped: no example ingredients for {d['text']!r}; set MODEL_PROVIDER to work them out")
                 continue
             notes.append(record_ingredients(client, convo_id, d["text"], ingredients))
             for i in ingredients:

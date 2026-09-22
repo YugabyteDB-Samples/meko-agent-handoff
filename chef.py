@@ -22,15 +22,15 @@ QUERY = "autumn menu: the dishes decided for the starter, main, and dessert, the
 SHOPPING_QUERY = "what does the kitchen need to buy"  # so the kitchen's notes clear the search floor on the promote run
 MAX_FINDINGS = 4  # three dishes and one open question; the code holds the line even if the model does not
 
-# A recorded model answer to QUESTION. With no MODEL_PROVIDER set, the chef replays it
-# instead of calling a model, so all you need is a Meko key.
-REPLAY_FILE = Path(__file__).with_name("chef_example.json")
+# An example answer to QUESTION. With no MODEL_PROVIDER set, the chef uses it instead
+# of calling a model, so all you need is a Meko key.
+EXAMPLE_FILE = Path(__file__).with_name("chef_example.json")
 
 
 def ask_model(question: str) -> str:
-    """Return the model's answer as text, or the recorded answer when no model is configured."""
+    """Return the model's answer as text, or the example answer when no model is configured."""
     if not os.environ.get("MODEL_PROVIDER", "").strip():
-        return REPLAY_FILE.read_text()
+        return EXAMPLE_FILE.read_text()
     from strands import Agent
     from meko_client import make_model
 
@@ -111,7 +111,7 @@ def promote(client) -> None:
 def main() -> None:
     if "--promote" not in sys.argv:
         raw = ask_model(QUESTION)
-        source = "replayed from chef_example.json" if not os.environ.get("MODEL_PROVIDER", "").strip() \
+        source = "example answer from chef_example.json" if not os.environ.get("MODEL_PROVIDER", "").strip() \
             else os.environ["MODEL_PROVIDER"]
 
     client = make_meko_mcp_client()
