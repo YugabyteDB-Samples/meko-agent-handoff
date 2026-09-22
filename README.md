@@ -26,7 +26,7 @@ This is the code from the webinar "Shared Memory for AI Coding Agents: A Live Bu
 | `orchestrator.py` | Lets an agent decide what to promote. A rule in code goes first, then a model judges what passed the rule. |
 | `promote.py` | Promotes from the terminal, asking you y or n for each memory. |
 | `prune.py` | Finds memories that never match the questions your project asks and offers to delete or correct them. |
-| `meko.py` | The shared plumbing. Every Meko call goes through one function that attaches your datapack, the agent name, and the trace id. |
+| `meko.py` | The shared plumbing. Every Meko call goes through one function that attaches your datapack, the agent name, and the trace id. It also posts each run's question, answer, reasoning, and plan to the trace. |
 | `meko_client.py` | Connects to Meko over MCP and picks the model provider from your `.env`. |
 
 ## How a decision travels
@@ -73,7 +73,7 @@ MEKO_AGENT_ID=writer:retry-demo uv run writer.py
 
 `MEKO_AGENT_ID` is the name each agent saves under. You will see it on every memory the writer prints, which is how you know the researcher wrote them.
 
-Each run prints a trace id. Paste it into the Observe hub for your datapack at cloud.mekodata.ai and you get the run laid out call by call: what the researcher wrote, what the writer searched for, and what each search returned.
+Each run prints a trace id. Paste it into the Observe hub for your datapack at cloud.mekodata.ai and you get the run laid out call by call: the question the agent was given, the model's answer, why the code did what it did, each search and what it returned, and each memory written.
 
 ## Share with a teammate
 
@@ -97,7 +97,7 @@ Meko has two ways to write, and they do different things.
 
 The researcher's decisions are in the answer, not the question. If this sample posted the turn, the extractor would read the question, never see the decisions, and save nothing useful. So `record_decision()` calls `memory_add`. The decision is saved every time the loop runs, in the words the model used, and each save shows up in the trace with its text and timing.
 
-If you also want the raw question and answer on record, post the turn with `conversation_add_message` after `record_decision()`. Expect the extractor to add a memory about the question, which changes what the writer prints.
+The sample still posts each run to the trace with `conversation_add_message`, so the question, the answer, the reasoning, and the plan are all there to read later. It puts a short label in the `input` field and the question in `output`, because a question in `input` becomes a memory of its own and shows up in the writer's search results above the real decisions.
 
 ## Let an agent decide what to promote
 

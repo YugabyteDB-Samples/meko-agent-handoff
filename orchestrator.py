@@ -9,7 +9,7 @@ Runs as its own agent_id so the trace shows who made the promotion call.
 import json
 import sys
 
-from meko import call, make_meko_mcp_client, open_trace
+from meko import call, log_turn, make_meko_mcp_client, open_trace
 
 QUERY = "http_client.py retry behavior: backoff, which status codes to retry, and Retry-After handling"
 JUDGE = (
@@ -46,15 +46,21 @@ def main() -> None:
         convo_id = open_trace(client, "orchestrator: promotion review")
         candidates = call(client, "memory_search", conversation_id=convo_id, query=QUERY)["results"]
 
-        approved = []
+        approved, verdicts = [], []
         for m in candidates:
             ok, why = allowed_by_policy(m["memory"])
             if ok and not rules_only:
                 ok, why = judged_by_model(m["memory"])
+            verdicts.append(f"{'PROMOTE' if ok else 'KEEP'}: {m['memory'][:70]} ({why})")
             print(f"{'PROMOTE' if ok else 'KEEP   '} {m['memory'][:70]}\n         {why}")
             if ok:
                 approved.append(m["id"])
 
+        log_turn(client, convo_id, "orchestrator run", output="\n".join(verdicts) or "no candidates",
+                 reasoning="The policy in code ran first; the model only judged records the policy allowed."
+                           if not rules_only else "Rules only: no model call.",
+                 plan=["Search private memories.", "Apply the policy.",
+                       "Promote the approved ones with memory_promote."])
         if approved:
             print(call(client, "memory_promote", conversation_id=convo_id, memory_ids=approved))
         else:

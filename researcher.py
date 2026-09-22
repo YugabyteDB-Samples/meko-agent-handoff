@@ -3,7 +3,7 @@ import json
 
 from strands import Agent
 
-from meko import call, make_meko_mcp_client, open_trace
+from meko import call, log_turn, make_meko_mcp_client, open_trace
 from meko_client import make_model
 
 SYSTEM = (
@@ -31,6 +31,13 @@ def main() -> None:
     client = make_meko_mcp_client()
     with client:
         convo_id = open_trace(client, "researcher: retry policy")
+        log_turn(client, convo_id, "researcher run",
+                 output=f"Question: {QUESTION}\n\nModel answer:\n{raw}",
+                 reasoning="The model answered; the code below writes every decision so the "
+                           "record does not depend on the model choosing to save it.",
+                 plan=["Ask the model for decisions, reasons, and rejected alternatives as JSON.",
+                       "Write each one to memory with memory_add so the wording is kept.",
+                       "Leave open questions private until someone settles them."])
         for d in findings:
             record_decision(client, convo_id, d)  # the code decides, every time
 

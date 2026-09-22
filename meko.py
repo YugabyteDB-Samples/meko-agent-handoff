@@ -36,4 +36,15 @@ def open_trace(client, title: str) -> str:
     return convo_id
 
 
-__all__ = ["make_meko_mcp_client", "call", "open_trace", "AGENT_ID", "DATAPACK_ID"]
+def log_turn(client, convo_id: str, label: str, output: str, reasoning: str, plan: list[str]) -> None:
+    """Put the agent's thinking in the trace: what it was asked, what came back, why, and the plan.
+
+    `input` is a short label on purpose. Meko extracts memories from the input side
+    of a posted turn, and a question there becomes a memory of its own that outranks
+    the real decisions in search. A label extracts nothing; the question goes in `output`.
+    """
+    call(client, "conversation_add_message", conversation_id=convo_id,
+         input=label, output=output, reasoning=reasoning, plan=plan)
+
+
+__all__ = ["make_meko_mcp_client", "call", "open_trace", "log_turn", "AGENT_ID", "DATAPACK_ID"]
