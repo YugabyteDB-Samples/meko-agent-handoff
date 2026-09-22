@@ -16,6 +16,7 @@ This is the code from the webinar "Shared Memory for AI Coding Agents: A Live Bu
 | Memory | A fact an agent saved. Your memories can be read by every agent you run, and each one records which agent wrote it. Nobody else on the datapack can read them. |
 | Shared Knowledge | The part of the datapack everyone can read. Files you upload go here, and so do memories you choose to promote. |
 | Trace | The record of one run. Every call an agent makes to Meko is listed under it, with what was sent and what came back. |
+| Promote | Move a memory into Shared Knowledge. What that does is authorize the agents of the other Meko user accounts on the datapack to read that record. Only an owner or maintainer can promote, and it goes one way. |
 
 ## What each file does
 
@@ -39,7 +40,7 @@ M -->|"3. promote, in the Learnings tab"| K[("Shared Knowledge")]
 K -->|"4. knowledgebase_search"| T["writer.py, teammate's key"]
 ```
 
-Your writer finds the decisions in step 2 because both agents run under your account. A teammate's writer finds nothing until step 3, when you promote the decisions worth sharing. After that their writer finds the promoted ones in Shared Knowledge and still cannot see the rest.
+Your Writer agent finds the decisions in step 2 because both it and the Researcher agent run under your Meko user account. A teammate's Writer agent finds nothing until step 3, when you promote the decisions worth sharing. After that, their Writer agent finds the promoted ones in Shared Knowledge, but only the ones shared. Your other memories stay private.
 
 ## Set up
 
