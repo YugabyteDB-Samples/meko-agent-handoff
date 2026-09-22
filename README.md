@@ -68,14 +68,13 @@ The trace ids and the ids in the promote result shown in the output blocks below
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py
 ```
 
-```console
-$ MEKO_AGENT_ID=chef:menu-demo uv run chef.py
-trace: 1f9c2d4e6b8a4c0e9d3b7a5f2e1c8b6d
-recorded: DECISION: Roasted squash soup as the starter on the autumn menu. REASON: Squash 
-recorded: DECISION: Mushroom and leek pie as the vegetarian main on the autumn menu. REASO
-recorded: DECISION: Pear and almond tart as the dessert on the autumn menu. REASON: Pears 
-recorded: OPEN_QUESTION: Should the roast chicken stay on the autumn menu, or come off to 
-```
+> **Expected output**
+>
+> `trace: 1f9c2d4e6b8a4c0e9d3b7a5f2e1c8b6d`<br>
+> `recorded: DECISION: Roasted squash soup as the starter on the autumn menu. REASON: Squash`<br>
+> `recorded: DECISION: Mushroom and leek pie as the vegetarian main on the autumn menu. REASO`<br>
+> `recorded: DECISION: Pear and almond tart as the dessert on the autumn menu. REASON: Pears`<br>
+> `recorded: OPEN_QUESTION: Should the roast chicken stay on the autumn menu, or come off to`
 
 With `MODEL_PROVIDER` empty, the answer comes from `chef_example.json`, so the four lines are identical on every run.
 
@@ -87,31 +86,30 @@ With `MODEL_PROVIDER` empty, the answer comes from `chef_example.json`, so the f
 MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py
 ```
 
-```console
-$ MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py
-trace: 3a7e5c1b9d2f4a6c8e0b1d3f5a7c9e2b
-memory: 4 results
-  [chef:menu-demo] DECISION: Roasted squash soup as the starter on the autumn menu. REASON: Squash is at its 
-  [chef:menu-demo] OPEN_QUESTION: Should the roast chicken stay on the autumn menu, or come off to make room 
-  [chef:menu-demo] DECISION: Pear and almond tart as the dessert on the autumn menu. REASON: Pears arrive in 
-  [chef:menu-demo] DECISION: Mushroom and leek pie as the vegetarian main on the autumn menu. REASON: The kit
-shared knowledge: 0 results
-recorded: INGREDIENTS: Roasted squash soup as the starter on the autumn menu. NEEDS: butte
-recorded: INGREDIENTS: Mushroom and leek pie as the vegetarian main on the autumn menu. NE
-recorded: INGREDIENTS: Pear and almond tart as the dessert on the autumn menu. NEEDS: pear
-
-# To buy for the autumn menu
-
-- butter (for: Pear and almond tart as the dessert on the autumn menu)
-- butternut squash (for: Roasted squash soup as the starter on the autumn menu)
-- ground almonds (for: Pear and almond tart as the dessert on the autumn menu)
-- leeks (for: Mushroom and leek pie as the vegetarian main on the autumn menu)
-- mushrooms (for: Mushroom and leek pie as the vegetarian main on the autumn menu)
-- onion (for: Roasted squash soup as the starter on the autumn menu)
-- pears (for: Pear and almond tart as the dessert on the autumn menu)
-- puff pastry (for: Mushroom and leek pie as the vegetarian main on the autumn menu)
-- vegetable stock (for: Roasted squash soup as the starter on the autumn menu)
-```
+> **Expected output**
+>
+> `trace: 3a7e5c1b9d2f4a6c8e0b1d3f5a7c9e2b`<br>
+> `memory: 4 results`<br>
+> `  [chef:menu-demo] DECISION: Roasted squash soup as the starter on the autumn menu. REASON: Squash is at its`<br>
+> `  [chef:menu-demo] OPEN_QUESTION: Should the roast chicken stay on the autumn menu, or come off to make room`<br>
+> `  [chef:menu-demo] DECISION: Pear and almond tart as the dessert on the autumn menu. REASON: Pears arrive in`<br>
+> `  [chef:menu-demo] DECISION: Mushroom and leek pie as the vegetarian main on the autumn menu. REASON: The kit`<br>
+> `shared knowledge: 0 results`<br>
+> `recorded: INGREDIENTS: Roasted squash soup as the starter on the autumn menu. NEEDS: butte`<br>
+> `recorded: INGREDIENTS: Mushroom and leek pie as the vegetarian main on the autumn menu. NE`<br>
+> `recorded: INGREDIENTS: Pear and almond tart as the dessert on the autumn menu. NEEDS: pear`<br>
+>
+> `# To buy for the autumn menu`<br>
+>
+> `- butter (for: Pear and almond tart as the dessert on the autumn menu)`<br>
+> `- butternut squash (for: Roasted squash soup as the starter on the autumn menu)`<br>
+> `- ground almonds (for: Pear and almond tart as the dessert on the autumn menu)`<br>
+> `- leeks (for: Mushroom and leek pie as the vegetarian main on the autumn menu)`<br>
+> `- mushrooms (for: Mushroom and leek pie as the vegetarian main on the autumn menu)`<br>
+> `- onion (for: Roasted squash soup as the starter on the autumn menu)`<br>
+> `- pears (for: Pear and almond tart as the dessert on the autumn menu)`<br>
+> `- puff pastry (for: Mushroom and leek pie as the vegetarian main on the autumn menu)`<br>
+> `- vegetable stock (for: Roasted squash soup as the starter on the autumn menu)`
 
 Memory is scoped to the Meko user account, not to the agent. The `agent_id` on each row identifies the writer. Search results are ranked by relevance score, so row order can vary between runs.
 
@@ -131,14 +129,13 @@ Then on your machine, `cp .env .env.teammate` and replace `MEKO_API_KEY` with us
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
 ```
 
-```console
-$ ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
-trace: 8512e829a5a2471b98dca7b66312ce64
-memory: 0 results
-shared knowledge: 0 results
-
-The menu is not ready yet. Nothing has been shared with the team.
-```
+> **Expected output**
+>
+> `trace: 8512e829a5a2471b98dca7b66312ce64`<br>
+> `memory: 0 results`<br>
+> `shared knowledge: 0 results`<br>
+>
+> `The menu is not ready yet. Nothing has been shared with the team.`
 
 Seven records exist on the datapack. None is visible to user 2.
 
@@ -150,25 +147,24 @@ Seven records exist on the datapack. None is visible to user 2.
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote
 ```
 
-```console
-$ MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote
-trace: 5c76bfe78e0d400686e9e2080cdb2b9a
-PROMOTE DECISION: Roasted squash soup as the starter on the autumn menu. REASO
-         decided, with a reason
-KEEP    OPEN_QUESTION: Should the roast chicken stay on the autumn menu, or co
-         open questions stay private until settled
-PROMOTE DECISION: Pear and almond tart as the dessert on the autumn menu. REAS
-         decided, with a reason
-PROMOTE DECISION: Mushroom and leek pie as the vegetarian main on the autumn m
-         decided, with a reason
-KEEP    INGREDIENTS: Roasted squash soup as the starter on the autumn menu. NE
-         only decided dishes go on the menu
-KEEP    INGREDIENTS: Mushroom and leek pie as the vegetarian main on the autum
-         only decided dishes go on the menu
-KEEP    INGREDIENTS: Pear and almond tart as the dessert on the autumn menu. N
-         only decided dishes go on the menu
-{'inserted_ids': ['b68312c8-...', 'b6e38db7-...', 'c41d9a02-...'], 'updated_ids': [], 'not_found_ids': []}
-```
+> **Expected output**
+>
+> `trace: 5c76bfe78e0d400686e9e2080cdb2b9a`<br>
+> `PROMOTE DECISION: Roasted squash soup as the starter on the autumn menu. REASO`<br>
+> `         decided, with a reason`<br>
+> `KEEP    OPEN_QUESTION: Should the roast chicken stay on the autumn menu, or co`<br>
+> `         open questions stay private until settled`<br>
+> `PROMOTE DECISION: Pear and almond tart as the dessert on the autumn menu. REAS`<br>
+> `         decided, with a reason`<br>
+> `PROMOTE DECISION: Mushroom and leek pie as the vegetarian main on the autumn m`<br>
+> `         decided, with a reason`<br>
+> `KEEP    INGREDIENTS: Roasted squash soup as the starter on the autumn menu. NE`<br>
+> `         only decided dishes go on the menu`<br>
+> `KEEP    INGREDIENTS: Mushroom and leek pie as the vegetarian main on the autum`<br>
+> `         only decided dishes go on the menu`<br>
+> `KEEP    INGREDIENTS: Pear and almond tart as the dessert on the autumn menu. N`<br>
+> `         only decided dishes go on the menu`<br>
+> `{'inserted_ids': ['b68312c8-...', 'b6e38db7-...', 'c41d9a02-...'], 'updated_ids': [], 'not_found_ids': []}`
 
 The rule is code and runs under `chef:menu-demo`, so the trace records which agent promoted which ids.
 
@@ -180,26 +176,25 @@ Same command and account as run 3. `knowledgebase_search` now returns the three 
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
 ```
 
-```console
-$ ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
-trace: 0e83b3330120469d8a9aa44ed88670cf
-memory: 0 results
-shared knowledge: 3 results
-  [chef:menu-demo] DECISION: Roasted squash soup as the starter on the autumn menu. REASON: Squash is at its 
-  [chef:menu-demo] DECISION: Pear and almond tart as the dessert on the autumn menu. REASON: Pears arrive in 
-  [chef:menu-demo] DECISION: Mushroom and leek pie as the vegetarian main on the autumn menu. REASON: The kit
-
-# Autumn menu
-
-3 dishes decided by the kitchen.
-
-- Roasted squash soup as the starter on the autumn menu.
-  Decided by: chef:menu-demo (Shared Knowledge)
-- Mushroom and leek pie as the vegetarian main on the autumn menu.
-  Decided by: chef:menu-demo (Shared Knowledge)
-- Pear and almond tart as the dessert on the autumn menu.
-  Decided by: chef:menu-demo (Shared Knowledge)
-```
+> **Expected output**
+>
+> `trace: 0e83b3330120469d8a9aa44ed88670cf`<br>
+> `memory: 0 results`<br>
+> `shared knowledge: 3 results`<br>
+> `  [chef:menu-demo] DECISION: Roasted squash soup as the starter on the autumn menu. REASON: Squash is at its`<br>
+> `  [chef:menu-demo] DECISION: Pear and almond tart as the dessert on the autumn menu. REASON: Pears arrive in`<br>
+> `  [chef:menu-demo] DECISION: Mushroom and leek pie as the vegetarian main on the autumn menu. REASON: The kit`<br>
+>
+> `# Autumn menu`<br>
+>
+> `3 dishes decided by the kitchen.`<br>
+>
+> `- Roasted squash soup as the starter on the autumn menu.`<br>
+> `  Decided by: chef:menu-demo (Shared Knowledge)`<br>
+> `- Mushroom and leek pie as the vegetarian main on the autumn menu.`<br>
+> `  Decided by: chef:menu-demo (Shared Knowledge)`<br>
+> `- Pear and almond tart as the dessert on the autumn menu.`<br>
+> `  Decided by: chef:menu-demo (Shared Knowledge)`
 
 The `OPEN_QUESTION` and `INGREDIENTS` records were not promoted and remain invisible to user 2.
 
