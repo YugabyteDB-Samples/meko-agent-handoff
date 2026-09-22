@@ -5,7 +5,8 @@ client = make_meko_mcp_client()
 with client:
     convo_id = open_trace(client, "promote: autumn menu")
     found = call(client, "memory_search", conversation_id=convo_id,
-                 query="autumn menu: the dishes decided for the starter, main, and dessert, the ingredients to buy for each, and what is still undecided")["results"]
+                 query="autumn menu: the dishes decided for the starter, main, and dessert, the ingredients to buy for each, and what is still undecided",
+                 limit=20)["results"]
 
     chosen = []
     for m in found:

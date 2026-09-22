@@ -18,8 +18,8 @@ INGREDIENTS_FILE = Path(__file__).with_name("kitchen_manager_example.json")
 
 def recall(client, convo_id: str) -> list[dict]:
     """Ask both scopes: memory_search for your memories, knowledgebase_search for the team's."""
-    mine = call(client, "memory_search", conversation_id=convo_id, query=QUERY)["results"]
-    team = call(client, "knowledgebase_search", conversation_id=convo_id, query=QUERY)["results"]
+    mine = call(client, "memory_search", conversation_id=convo_id, query=QUERY, limit=20)["results"]
+    team = call(client, "knowledgebase_search", conversation_id=convo_id, query=QUERY, limit=20)["results"]
 
     print(f"memory: {len(mine)} results")
     for m in mine:

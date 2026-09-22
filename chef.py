@@ -87,7 +87,7 @@ def promote(client) -> None:
     convo_id = open_trace(client, "chef: share the decided dishes")
     candidates: dict[str, dict] = {}
     for query in (QUERY, SHOPPING_QUERY):  # two searches, joined by id, so every private record gets a verdict
-        for m in call(client, "memory_search", conversation_id=convo_id, query=query)["results"]:
+        for m in call(client, "memory_search", conversation_id=convo_id, query=query, limit=20)["results"]:
             candidates.setdefault(m["id"], m)
 
     approved, verdicts = [], []

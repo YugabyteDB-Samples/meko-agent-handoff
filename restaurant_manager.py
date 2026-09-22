@@ -10,8 +10,8 @@ QUERY = "autumn menu: the dishes decided for the starter, main, and dessert, the
 
 def recall(client, convo_id: str) -> list[dict]:
     """Ask both scopes: memory_search for your memories, knowledgebase_search for the team's."""
-    mine = call(client, "memory_search", conversation_id=convo_id, query=QUERY)["results"]
-    team = call(client, "knowledgebase_search", conversation_id=convo_id, query=QUERY)["results"]
+    mine = call(client, "memory_search", conversation_id=convo_id, query=QUERY, limit=20)["results"]
+    team = call(client, "knowledgebase_search", conversation_id=convo_id, query=QUERY, limit=20)["results"]
 
     print(f"memory: {len(mine)} results")
     for m in mine:
@@ -60,6 +60,7 @@ def main() -> None:
         convo_id = open_trace(client, f"restaurant-manager: menu ({DATAPACK_ID[:8]})")
         records = recall(client, convo_id)
         dishes = [{**r, "dish": dish_of(r["text"])} for r in records if dish_of(r["text"])]
+        dishes = list({d["dish"]: d for d in dishes}.values())  # one entry per dish, even if a record was promoted twice
 
         if not dishes:
             log_turn(client, convo_id, "restaurant-manager run", output="Stopped: the menu is not ready.",
