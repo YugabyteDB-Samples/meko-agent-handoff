@@ -1,7 +1,7 @@
-"""Shared plumbing for the webinar demo. Prepared ahead of time, not typed live.
+"""Shared plumbing for every script in this repo.
 
-Every Meko call in the demo goes through call(), so there is a single place where
-the datapack, the agent_id, and the conversation (trace) id get attached.
+Every Meko call goes through call(), so there is one place where the datapack,
+the agent_id, and the conversation (trace) id get attached to a request.
 """
 from __future__ import annotations
 
@@ -11,12 +11,22 @@ import uuid
 
 from dotenv import load_dotenv
 
-load_dotenv(os.environ.get("ENV_FILE", ".env.me"), override=True)  # .env.teammate in terminal C
+# Settings come from .env. Set ENV_FILE to a different file to run as another Meko
+# user, for example ENV_FILE=.env.teammate.
+load_dotenv(os.environ.get("ENV_FILE", ".env"), override=True)
 
-from meko_client import make_meko_mcp_client  # unchanged from the sample repo
+from meko_client import make_meko_mcp_client
 
-DATAPACK_ID = os.environ["MEKO_DATAPACK_ID"]
-AGENT_ID = os.environ["MEKO_AGENT_ID"]  # e.g. researcher:retry-demo
+DATAPACK_ID = os.environ.get("MEKO_DATAPACK_ID", "").strip()
+AGENT_ID = os.environ["MEKO_AGENT_ID"]  # the name this script saves under, e.g. researcher:retry-demo
+
+try:
+    uuid.UUID(DATAPACK_ID)
+except ValueError:
+    raise SystemExit(
+        f"MEKO_DATAPACK_ID is {DATAPACK_ID!r}, which is not a datapack id. It needs the UUID "
+        "shown on the datapack's page at cloud.mekodata.ai, not the datapack's name."
+    )
 
 
 def call(client, tool: str, **arguments) -> dict:
@@ -26,7 +36,14 @@ def call(client, tool: str, **arguments) -> dict:
         name=tool,
         arguments={"agent_id": AGENT_ID, "datapack_id": DATAPACK_ID, **arguments},
     )
-    return json.loads(res["content"][0]["text"])
+    text = "\n".join(c.get("text", "") for c in res.get("content", []) if "text" in c)
+    if res.get("status") != "success":
+        raise RuntimeError(f"Meko tool {tool} returned an error:\n{text or res}")
+    # The tool's answer is JSON inside the text block.
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"Meko tool {tool} returned something other than JSON:\n{text[:800] or res}")
 
 
 def open_trace(client, title: str) -> str:

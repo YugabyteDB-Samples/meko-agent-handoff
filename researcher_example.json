@@ -1,0 +1,20 @@
+[
+  {
+    "kind": "decision",
+    "text": "Retry only on transient failures: connection errors, timeouts, and HTTP 429/502/503/504. Never retry on 4xx other than 429, and never retry on 501.",
+    "reason": "These are the statuses where a second attempt has a real chance of succeeding without masking a client bug. Retrying 400/401/403/404 just delays surfacing a real error to the caller.",
+    "rejected": "Retrying all 5xx uniformly (500 often indicates a deterministic server bug and 501 will never succeed on retry)."
+  },
+  {
+    "kind": "decision",
+    "text": "Retry with exponential backoff and full jitter: wait random(0, min(30s, 0.5s * 2**attempt)) between attempts, up to 3 retries by default, before giving up on a retryable status code.",
+    "reason": "Full jitter (per the AWS Architecture Blog analysis) spreads retry storms better than fixed or equal-jitter backoff and keeps total worst-case wait bounded. Three retries covers most transient blips without multiplying load on a struggling server by more than ~4x.",
+    "rejected": "Fixed-interval retries (thundering-herd risk when many clients fail at the same moment)."
+  },
+  {
+    "kind": "open_question",
+    "text": "Should Retry-After be honored, and if so, how should the seconds form and the HTTP-date form both be handled?",
+    "reason": "A server-supplied Retry-After overrides our own backoff schedule when present, but the header comes in two formats and only one is a simple integer to sleep on. Deciding this changes whether the retry loop needs a date parser.",
+    "rejected": null
+  }
+]

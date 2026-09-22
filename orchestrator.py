@@ -3,10 +3,13 @@ the ones the team should build on. Code sets the guardrail; a model may judge in
 
 Runs as its own agent_id so the trace shows who made the promotion call.
 
-    MEKO_AGENT_ID=orchestrator:retry-demo uv run orchestrator.py            # model judges
-    MEKO_AGENT_ID=orchestrator:retry-demo uv run orchestrator.py --rules   # code only
+    MEKO_AGENT_ID=orchestrator:retry-demo uv run orchestrator.py            # the rule alone, no model
+    MEKO_AGENT_ID=orchestrator:retry-demo uv run orchestrator.py --judge    # a model judges what passed the rule
+
+--judge needs MODEL_PROVIDER set.
 """
 import json
+import os
 import sys
 
 from meko import call, log_turn, make_meko_mcp_client, open_trace
@@ -31,6 +34,7 @@ def allowed_by_policy(text: str) -> tuple[bool, str]:
 
 
 def judged_by_model(text: str) -> tuple[bool, str]:
+    """Ask a model whether one record that passed the rule should be shared."""
     from strands import Agent
     from meko_client import make_model
 
@@ -40,7 +44,10 @@ def judged_by_model(text: str) -> tuple[bool, str]:
 
 
 def main() -> None:
-    rules_only = "--rules" in sys.argv
+    use_model = "--judge" in sys.argv
+    if use_model and not os.environ.get("MODEL_PROVIDER", "").strip():
+        sys.exit("--judge needs MODEL_PROVIDER set in .env. Run without it to promote on the rule alone.")
+
     client = make_meko_mcp_client()
     with client:
         convo_id = open_trace(client, "orchestrator: promotion review")
@@ -49,7 +56,7 @@ def main() -> None:
         approved, verdicts = [], []
         for m in candidates:
             ok, why = allowed_by_policy(m["memory"])
-            if ok and not rules_only:
+            if ok and use_model:
                 ok, why = judged_by_model(m["memory"])
             verdicts.append(f"{'PROMOTE' if ok else 'KEEP'}: {m['memory'][:70]} ({why})")
             print(f"{'PROMOTE' if ok else 'KEEP   '} {m['memory'][:70]}\n         {why}")
@@ -58,7 +65,7 @@ def main() -> None:
 
         log_turn(client, convo_id, "orchestrator run", output="\n".join(verdicts) or "no candidates",
                  reasoning="The policy in code ran first; the model only judged records the policy allowed."
-                           if not rules_only else "Rules only: no model call.",
+                           if use_model else "Rules only: no model call.",
                  plan=["Search private memories.", "Apply the policy.",
                        "Promote the approved ones with memory_promote."])
         if approved:

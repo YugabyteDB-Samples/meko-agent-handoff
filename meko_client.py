@@ -1,26 +1,21 @@
-"""Wiring for the Meko x Strands sample.
+"""Connections. Two things live here so the agent scripts can stay about the agents.
 
-Two things live here so `agent.py` can stay about the *agent*:
+  1. make_meko_mcp_client() connects to Meko. Meko's MCP server speaks Streamable
+     HTTP at https://mcp.mekodata.ai/mcp, and the Meko API key goes in an
+     `Authorization: Bearer <key>` header on every request.
 
-  1. `make_meko_mcp_client()` - a Strands MCPClient pointed at a Meko datapack.
-     Meko's Cloud MCP server speaks Streamable HTTP at https://mcp.mekodata.ai/mcp.
-     Auth is a Meko API key sent as an `Authorization: Bearer <key>` header.
+  2. make_model() builds the model, if you use one. The scripts only call it when
+     MODEL_PROVIDER is set. You bring your own key for Anthropic, Amazon Bedrock, or
+     Google Vertex AI; Meko never sees it.
 
-  2. `make_model()` - the inference layer. You bring your own model key here; Meko
-     never sees it. The default path is Vertex AI via LiteLLM using Application
-     Default Credentials (no API key to manage), which is the path most Yugabyte
-     folks already have through gcloud. Anthropic and Bedrock are one env var away.
-
-The split is the point of the sample: the *Meko key* unlocks the data plane
-(memory + knowledge + audit), and a *separate model key you already own* powers the
-inference. Swap the model provider without touching any Meko code.
+The two are separate on purpose. The Meko key unlocks memory, Shared Knowledge, and
+the trace. A model key, if any, only powers the thinking.
 """
 
 from __future__ import annotations
 
 import os
 
-from mcp.client.streamable_http import streamablehttp_client
 from strands.tools.mcp import MCPClient
 
 
@@ -63,52 +58,31 @@ def make_meko_mcp_client() -> MCPClient:
     """
     url = os.environ.get("MEKO_MCP_URL", DEFAULT_MEKO_MCP_URL).strip() or DEFAULT_MEKO_MCP_URL
     headers = _auth_headers()
-    # streamablehttp_client is invoked lazily by MCPClient on first use.
-    return MCPClient(lambda: streamablehttp_client(url=url, headers=headers))
-
-
-def meko_env() -> dict[str, str]:
-    """Read the datapack identifiers the agent needs, with a clear error if missing."""
-    datapack_id = os.environ.get("MEKO_DATAPACK_ID", "").strip()
-    name = os.environ.get("MEKO_DATAPACK_NAME", "").strip()
-    agent_id = os.environ.get("MEKO_AGENT_ID", "discord-digest-agent").strip() \
-        or "discord-digest-agent"
-    if not datapack_id:
-        raise RuntimeError(
-            "MEKO_DATAPACK_ID is not set. Memory + knowledge tools scope to the datapack "
-            "UUID and knowledgebase_search requires it. Set it in .env."
-        )
-    return {"name": name, "datapack_id": datapack_id, "agent_id": agent_id}
+    # Strands opens the connection the first time the client is used and sends these
+    # headers with every request.
+    return MCPClient(url=url, headers=headers)
 
 
 # --------------------------------------------------------------------------- #
 # Inference layer (bring your own model key - Meko never sees it)
 # --------------------------------------------------------------------------- #
 def make_model(provider: str | None = None):
-    """Build a Strands model for the chosen provider.
+    """Build a Strands model for the provider named by MODEL_PROVIDER (or the argument).
 
-    provider precedence: explicit arg > MODEL_PROVIDER env > "vertex".
-
-      - "vertex"   : Vertex AI via LiteLLM. No API key. Uses Application Default
-                     Credentials (run `gcloud auth application-default login` once).
-                     Reads VERTEX_MODEL_ID / VERTEX_PROJECT / VERTEX_LOCATION.
       - "anthropic": Anthropic API. Needs ANTHROPIC_API_KEY.
-      - "bedrock"  : Strands' built-in default (Amazon Bedrock). Needs AWS creds +
-                     Bedrock model access. Returns None so Strands uses its default.
+      - "bedrock"  : Amazon Bedrock, Strands' built-in default. Needs AWS credentials
+                     with Bedrock model access. Returns None so Strands uses its default.
+      - "vertex"   : Vertex AI through LiteLLM. No API key; it uses Application Default
+                     Credentials from `gcloud auth application-default login`.
+                     Reads VERTEX_PROJECT, VERTEX_LOCATION, and VERTEX_MODEL_ID.
     """
-    provider = (provider or os.environ.get("MODEL_PROVIDER", "vertex")).strip().lower()
+    provider = (provider or os.environ.get("MODEL_PROVIDER", "")).strip().lower()
 
     if provider == "vertex":
-        # Vertex through LiteLLM. Auth is ADC, not a key: `gcloud auth
-        # application-default login` writes ~/.config/gcloud/application_default_credentials.json
-        # and LiteLLM exchanges it for a short-lived token automatically.
         from strands.models.litellm import LiteLLMModel
 
-        # Vertex config: us-central1, temperature 0.7, max_tokens 1024. Default
-        # model is gemini-2.5-flash-lite, verified available in us-central1. The
-        # newer gemini-3.1-flash-lite 404s ("Publisher model ... not found") in
-        # some projects/regions as of 2026-07; override with VERTEX_MODEL_ID once
-        # it's enabled for your project/region.
+        # gemini-2.5-flash-lite in us-central1 unless VERTEX_MODEL_ID and
+        # VERTEX_LOCATION say otherwise.
         model_id = os.environ.get("VERTEX_MODEL_ID", "vertex_ai/gemini-2.5-flash-lite").strip()
         project = os.environ.get(
             "VERTEX_PROJECT", os.environ.get("GOOGLE_CLOUD_PROJECT", "")
@@ -131,8 +105,8 @@ def make_model(provider: str | None = None):
         )
 
     if provider == "anthropic":
-        # Check the key before importing so a missing key gives a clear message
-        # even if the optional `anthropic` extra isn't installed.
+        # Check the key before importing, so a missing key gives a clear message even
+        # if the anthropic package is not installed.
         if not os.environ.get("ANTHROPIC_API_KEY", "").strip():
             raise RuntimeError("MODEL_PROVIDER=anthropic but ANTHROPIC_API_KEY is not set.")
         from strands.models.anthropic import AnthropicModel
@@ -144,5 +118,6 @@ def make_model(provider: str | None = None):
         return None  # Strands default: Amazon Bedrock.
 
     raise RuntimeError(
-        f"Unknown MODEL_PROVIDER {provider!r}. Use 'vertex', 'anthropic', or 'bedrock'."
+        f"MODEL_PROVIDER is {provider!r}. Use 'anthropic', 'bedrock', or 'vertex', "
+        "or leave it empty to run without a model."
     )
