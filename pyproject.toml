@@ -1,0 +1,35 @@
+[project]
+name = "meko-agent-handoff"
+version = "0.1.0"
+description = "Two Strands agents sharing decisions through Meko: one records, one recalls, a person promotes, every call is traced."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.13"
+dependencies = [
+    # Strands Agents SDK. The [litellm] extra pulls in LiteLLM, which routes the
+    # default Vertex AI (Gemini via ADC) inference path. mcp (the MCP client used
+    # in meko_client.py) comes in transitively via strands-agents.
+    "strands-agents[litellm]>=1.48.0",
+    # Loads .env for local runs.
+    "python-dotenv>=1.2.2",
+    # Needed for the Vertex AI / Application Default Credentials path.
+    "google-auth>=2.56.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.uv]
+# Flat-layout sample (agent.py / meko_client.py are run directly, not installed
+# as a package), so uv should not try to build/install this project itself.
+package = false
+
+[tool.pytest.ini_options]
+# Flat layout: put the repo root on sys.path so tests can `import agent` /
+# `import meko_client` without a package install.
+pythonpath = ["."]
+markers = [
+    "integration: exercises real Meko (and optionally real inference); skipped unless credentials are present. Opt in with -m integration.",
+]
