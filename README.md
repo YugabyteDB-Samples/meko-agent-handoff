@@ -1,6 +1,6 @@
 # meko-agent-handoff
 
-Three small Python scripts that show how agents share what they learn through [Meko](https://cloud.mekodata.ai), over MCP. One records decisions. One reads them back in a new process. One runs under a second Meko user account and gets nothing until a rule in code shares them. Every read and write lands in a trace.
+Three small Python scripts that show how agents share what they learn through [Meko](https://cloud.mekodata.ai), over MCP. One records decisions. One reads them back in a new process. One runs in a second Meko user's account and gets nothing until a rule in code shares them. Every read and write lands in a trace.
 
 No model key is needed. In place of a model, the scripts use example answers stored in JSON files, so a free Meko account is enough to run all five steps.
 
@@ -166,7 +166,7 @@ MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote
 > `         only decided dishes go on the menu`<br>
 > `{'inserted_ids': ['b68312c8-...', 'b6e38db7-...', 'c41d9a02-...'], 'updated_ids': [], 'not_found_ids': []}`
 
-The rule is code and runs under `chef:menu-demo`, so the trace records which agent promoted which ids.
+The rule is code. It runs in Meko user 1's account with the agent id `chef:menu-demo`, so the trace records which agent promoted which ids.
 
 ### 5. The restaurant manager prints the menu
 
