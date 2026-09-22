@@ -36,9 +36,9 @@ Every command sets `MEKO_AGENT_ID`, the name the script writes under. It is requ
 
 ## Run it
 
-The demo uses two Meko user accounts on one datapack. `user_1@example.com` runs `chef.py` and `kitchen_manager.py`. `user_2@example.com` runs `restaurant_manager.py` and can read only what `user_1` promotes to Shared Knowledge. Each run prints a `memory` count and a `shared knowledge` count. Those two counts are the result to check.
+The demo uses two Meko user accounts on one datapack. A Meko user account is identified by its email address, for example `user_1@example.com`; this README calls the two accounts user 1 and user 2. User 1 runs `chef.py` and `kitchen_manager.py`. User 2 runs `restaurant_manager.py` and can read only what user 1 promotes to Shared Knowledge. Each run prints a `memory` count and a `shared knowledge` count. Those two counts are the result to check.
 
-Start from an empty datapack. Runs 1, 2 and 4 use `user_1`'s API key in `.env`. Runs 3 and 5 use `user_2`'s key in `.env.teammate`, selected with `ENV_FILE`.
+Start from an empty datapack. Runs 1, 2 and 4 use user 1's API key in `.env`. Runs 3 and 5 use user 2's key in `.env.teammate`, selected with `ENV_FILE`.
 
 ### 1. The chef records the menu decisions
 
@@ -60,7 +60,7 @@ With `MODEL_PROVIDER` empty, the answer comes from `chef_example.json`, so the f
 
 ### 2. The kitchen manager adds the shopping notes
 
-`kitchen_manager.py` is a separate process and shares no state with `chef.py`. It runs under `user_1`, so `memory_search` returns the chef's four records and `knowledgebase_search` returns nothing. It keeps the three `DECISION` records, looks up each dish's ingredients in `kitchen_manager_example.json`, and writes one `INGREDIENTS` record per dish with `memory_add` under its own agent id. Expected output: `memory: 4 results` with each row tagged `[chef:menu-demo]`, `shared knowledge: 0 results`, then three `recorded:` lines and the shopping list.
+`kitchen_manager.py` is a separate process and shares no state with `chef.py`. It runs under user 1, so `memory_search` returns the chef's four records and `knowledgebase_search` returns nothing. It keeps the three `DECISION` records, looks up each dish's ingredients in `kitchen_manager_example.json`, and writes one `INGREDIENTS` record per dish with `memory_add` under its own agent id. Expected output: `memory: 4 results` with each row tagged `[chef:menu-demo]`, `shared knowledge: 0 results`, then three `recorded:` lines and the shopping list.
 
 ```bash
 MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py
@@ -95,7 +95,7 @@ Memory is scoped to the Meko user account, not to the agent. The `agent_id` on e
 
 ### 3. The restaurant manager finds nothing
 
-`restaurant_manager.py` runs under `user_2` and makes the same two searches. `user_2` cannot read `user_1`'s memory, and nothing has been promoted, so both searches return zero results. The script reports that the menu is not ready and exits without writing. Expected output: `memory: 0 results` and `shared knowledge: 0 results`, then the not-ready message.
+`restaurant_manager.py` runs under user 2 and makes the same two searches. user 2 cannot read user 1's memory, and nothing has been promoted, so both searches return zero results. The script reports that the menu is not ready and exits without writing. Expected output: `memory: 0 results` and `shared knowledge: 0 results`, then the not-ready message.
 
 ```bash
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
@@ -109,11 +109,11 @@ shared knowledge: 0 results
 The menu is not ready yet. Nothing has been shared with the team.
 ```
 
-Seven records exist on the datapack. None is visible to `user_2`.
+Seven records exist on the datapack. None is visible to user 2.
 
 ### 4. The chef promotes the decided dishes
 
-`chef.py --promote` runs under `user_1`. It searches memory and applies `allowed_by_policy()` to each record: a `DECISION` with a `REASON` is promoted; an `OPEN_QUESTION` is not; `INGREDIENTS` records are not, because they are not menu items. It then calls `memory_promote` with the three approved ids. Expected output: seven verdicts, then the promote result with three ids.
+`chef.py --promote` runs under user 1. It searches memory and applies `allowed_by_policy()` to each record: a `DECISION` with a `REASON` is promoted; an `OPEN_QUESTION` is not; `INGREDIENTS` records are not, because they are not menu items. It then calls `memory_promote` with the three approved ids. Expected output: seven verdicts, then the promote result with three ids.
 
 ```bash
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote
@@ -168,11 +168,11 @@ shared knowledge: 3 results
   Decided by: chef:menu-demo (Shared Knowledge)
 ```
 
-The `OPEN_QUESTION` and `INGREDIENTS` records were not promoted and remain invisible to `user_2`.
+The `OPEN_QUESTION` and `INGREDIENTS` records were not promoted and remain invisible to user 2.
 
 ### Read the traces
 
-Each run prints a trace id. Open it in the Observe hub at cloud.mekodata.ai to see every call in order: the question, the model answer, the reasoning, each search with its results, and each write. The run 3 trace records two empty searches with a timestamp, which is the evidence that `user_2` did not have the decisions at that time.
+Each run prints a trace id. Open it in the Observe hub at cloud.mekodata.ai to see every call in order: the question, the model answer, the reasoning, each search with its results, and each write. The run 3 trace records two empty searches with a timestamp, which is the evidence that user 2 did not have the decisions at that time.
 
 ## The cast
 
@@ -194,7 +194,7 @@ The words: a **datapack** is the workspace. A **memory** belongs to your Meko us
 
 **The code decides what is persisted.** Meko has two ways to write. `conversation_add_message` stores a turn in the trace and extracts memories from its input side only; the extractor rewrites what it reads and may keep nothing. `memory_add` stores your text as one memory, as written. The decisions live in the model's answer, so `record_decision()` writes them with `memory_add`; the model never touches Meko. The scripts still post each run to the trace with `conversation_add_message`, with a short label in `input` and the question in `output`, because a question in `input` becomes a memory of its own and outranks the real decisions in search.
 
-**Memory is per Meko user account, labeled by agent.** Step 2 reads step 1's records because both run under `user_1`; the agent_id on each row is a label, not a wall. Step 3 reads nothing because it runs under `user_2`.
+**Memory is per Meko user account, labeled by agent.** Step 2 reads step 1's records because both run under user 1; the agent_id on each row is a label, not a wall. Step 3 reads nothing because it runs under user 2.
 
 **Promotion is the gate, and it can be code.** Nothing becomes team knowledge until something promotes it: a rule in `chef.py --promote`, a person in `promote.py`, or a click in the Learnings tab. It goes one way.
 
