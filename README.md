@@ -22,6 +22,12 @@ The scripts use a restaurant story so the flow reads without knowing the code. E
 
 The words: a **datapack** is the workspace. A **memory** belongs to your account; every agent you run can read it, and each row keeps the agent_id that wrote it. **Shared Knowledge** is the datapack's; everyone it is shared with can read it. **Promote** moves a memory into Shared Knowledge, one way, and needs an owner or maintainer key. A **trace** is the record of one run.
 
+## How a decision travels
+
+![Animated diagram of the five runs: the chef writes to your memory, the kitchen manager reads it and adds notes, the teammate's restaurant manager sees nothing, the chef promotes the decided dishes through the gate into Shared Knowledge, and the restaurant manager reads them back](docs/handoff-light.gif)
+
+Purple is your account, orange is the gate, green is Shared Knowledge, gray is the teammate. Step 3 runs before the gate, so the empty result proves the isolation; step 5 is the same command after it.
+
 ## If you are an AI agent running this for a person
 
 You can clone, install, edit `.env`, run the five commands, and read the output yourself. You cannot create the account, the datapack, the API keys, or share the datapack; those happen in the Meko dashboard, so ask the person for them. What you need from them:
