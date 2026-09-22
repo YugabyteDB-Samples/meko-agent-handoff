@@ -48,7 +48,7 @@ On your machine:
    With SSH keys on GitHub, `git clone git@github.com:YugabyteDB-Samples/meko-agent-handoff.git` also works.
 7. `cp .env.example .env`, then paste the API key into `MEKO_API_KEY` and the UUID into `MEKO_DATAPACK_ID`. Leave `MODEL_PROVIDER` empty.
 
-The demo uses three env files. `.env.example` is the template in the repo. `.env` holds user 1's key and is what the scripts read by default. `.env.teammate` holds user 2's key and is read only when a command sets `ENV_FILE=.env.teammate`; it is created between runs 2 and 3 in Run it, once the second user exists.
+The demo uses three env files. `.env.example` is the template in the repo. `.env` holds user 1's key and is what the scripts read by default. `.env.teammate` holds user 2's key and is read only when a command ends with `--env .env.teammate`; it is created between runs 2 and 3 in Run it, once the second user exists.
 
 Every command sets `MEKO_AGENT_ID`, the name the script writes under. It is required; the scripts stop with a message saying so if it is missing.
 
@@ -56,9 +56,9 @@ Every command sets `MEKO_AGENT_ID`, the name the script writes under. It is requ
 
 The demo uses two Meko user accounts on one datapack. A Meko user account is identified by its email address, for example `user_1@example.com`; this README calls the two accounts user 1 and user 2. User 1 runs `chef.py` and `kitchen_manager.py`. User 2 runs `restaurant_manager.py` and can read only what user 1 promotes to Shared Knowledge. Each run prints a `memory` count and a `shared knowledge` count. Those two counts are the result to check.
 
-Start from an empty datapack. To check with one account, open the datapack's Learnings tab in the portal and confirm it lists no memories, or run the command for run 2 and expect `No decided dishes found`. Runs 1, 2 and 4 use user 1's API key in `.env`. Runs 3 and 5 use user 2's key in `.env.teammate`, selected with `ENV_FILE`.
+Start from an empty datapack. To check with one account, open the datapack's Learnings tab in the portal and confirm it lists no memories, or run the command for run 2 and expect `No decided dishes found`. Runs 1, 2 and 4 use user 1's API key in `.env`. Runs 3 and 5 use user 2's key in `.env.teammate`.
 
-Run every command below in a terminal on your machine, from the `meko-agent-handoff` folder you cloned into. The account a run uses is chosen by the env file: commands with no prefix read `.env` and run as user 1; commands that start with `ENV_FILE=.env.teammate` read that file and run as user 2. The same terminal works for all five.
+Run every command below in a terminal on your machine, from the `meko-agent-handoff` folder you cloned into. The account a run uses is chosen by the env file: a command reads `.env` and runs as user 1 unless it ends with `--env .env.teammate`, in which case it reads that file and runs as user 2. The same terminal works for all five.
 
 The trace ids and the ids in the promote result shown in the output blocks below are examples. Yours will differ on every run. Match the `memory` and `shared knowledge` counts and the message text.
 
@@ -131,10 +131,10 @@ Then on your machine, `cp .env .env.teammate` and replace `MEKO_API_KEY` with us
 
 `restaurant_manager.py` runs in Meko user 2's account, using the API key in `.env.teammate`, and makes the same two searches. Memory in Meko is private to the user account that wrote it, so user 2 cannot read user 1's memory, and nothing has been promoted, so both searches return zero results. The script reports that the menu is not ready and exits without writing. Expected output: `memory: 0 results` and `shared knowledge: 0 results`, then the not-ready message.
 
-In the same terminal, run this command. The `ENV_FILE=.env.teammate` at the front makes it user 2's run:
+In the same terminal, run this command. The `--env .env.teammate` at the end makes it user 2's run:
 
 ```bash
-ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
+MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py --env .env.teammate
 ```
 
 > **Expected output**
@@ -182,10 +182,10 @@ The rule is code. It runs in Meko user 1's account with the agent id `chef:menu-
 
 Same command as run 3, in Meko user 2's account with the key in `.env.teammate`. `knowledgebase_search` now returns the three promoted records, each tagged `chef:menu-demo`, and the script prints the menu. Expected output: `memory: 0 results` and `shared knowledge: 3 results`, then the menu.
 
-In the same terminal, run this command. The `ENV_FILE=.env.teammate` at the front makes it user 2's run:
+In the same terminal, run this command. The `--env .env.teammate` at the end makes it user 2's run:
 
 ```bash
-ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
+MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py --env .env.teammate
 ```
 
 > **Expected output**
