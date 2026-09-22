@@ -26,7 +26,15 @@ def call(client, tool: str, **arguments) -> dict:
         name=tool,
         arguments={"agent_id": AGENT_ID, "datapack_id": DATAPACK_ID, **arguments},
     )
-    return json.loads(res["content"][0]["text"])
+    text = "\n".join(c.get("text", "") for c in res.get("content", []) if "text" in c)
+    if res.get("status") != "success":
+        raise RuntimeError(f"Meko tool {tool} returned an error:\n{text or res}")
+    if "structuredContent" in res:  # mcp 2.x servers may return the payload here
+        return res["structuredContent"]
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"Meko tool {tool} returned something other than JSON:\n{text[:800] or res}")
 
 
 def open_trace(client, title: str) -> str:
