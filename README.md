@@ -85,7 +85,7 @@ Each run prints a trace id. Paste it into the Observe hub for your datapack at c
 
 ## Share with a teammate
 
-Add a second Meko user to the datapack and run the writer with their token:
+Add a second Meko user to the datapack. Copy `.env` to `.env.teammate`, replace `MEKO_API_KEY` with that user's token, and keep the same `MEKO_DATAPACK_ID`. Then run the writer as them:
 
 ```bash
 ENV_FILE=.env.teammate MEKO_AGENT_ID=writer:retry-demo uv run writer.py
@@ -124,5 +124,21 @@ Edit `QUESTION` in `researcher.py` to a decision from your own project, and set 
 ## The rule
 
 Memory while you and your agents are still working it out. Shared Knowledge when the team should build on it. Your code makes the write, so the record exists after every run.
+
+## Reset the demo
+
+Every run adds to the datapack: memories from the researcher, promotions from the Learnings tab or the orchestrator, and one conversation per script run in the Observe hub. Promotion is one way, so once a decision is in Shared Knowledge the only way back to an empty datapack is a new datapack.
+
+To start over:
+
+1. Delete the datapack at cloud.mekodata.ai, or call `datapack_delete` from any MCP client connected to Meko. This removes its memories, its Shared Knowledge, and its traces together. If you want to keep the traces from a run, keep that datapack and make a new one instead.
+2. Create a new datapack and copy its ID from the datapack page.
+3. Put the new ID in `MEKO_DATAPACK_ID` in both `.env` and `.env.teammate`. The tokens do not change.
+4. Add the second Meko user to the new datapack again. Membership belongs to the datapack, so it does not carry over.
+5. Run the teammate's writer once. Both searches should return zero. That is your check that the datapack is clean.
+
+If you only want to remove what one run wrote and keep the datapack, `prune.py` deletes or corrects individual memories, and `memory_delete_all` from an MCP client clears every memory at once. Neither undoes a promotion.
+
+If a token appeared on screen during a recording or a shared session, revoke it at cloud.mekodata.ai and create a new one. `.env` and `.env.teammate` are the only places the tokens live in this repo, and both are ignored by git.
 
 Questions and what you built go to the Meko Discord.
