@@ -1,6 +1,6 @@
 # meko-agent-handoff
 
-Two Python agents on the [Strands Agents SDK](https://strandsagents.com) sharing decisions through [Meko](https://mekodata.ai). One agent researches a question and records what it decided and why. A second agent, in a fresh process with no prior context, reads those decisions back. A person promotes the ones the team should build on. Every call is a span in a trace you can open.
+Two Python agents on the [Strands Agents SDK](https://strandsagents.com) sharing decisions through [Meko](https://mekodata.ai). One agent researches a question and records what it decided and why. A second agent, in a fresh process with no prior context, reads those decisions back. A person promotes the ones the team should build on. Afterwards you can open the run in Meko and see what each agent wrote, what it searched for, and what came back.
 
 This is the code from the webinar "Shared Memory for AI Coding Agents: A Live Build with Meko" (September 22, 2026).
 
@@ -26,7 +26,7 @@ flowchart TD
     K -->|"4. knowledgebase_search"| T["writer.py, teammate's key"]
 ```
 
-The writer asks both scopes and prints which one answered. Before step 3, the teammate's writer gets nothing from either. After it, `knowledgebase_search` returns the promoted records and nothing else, and the promoted memories leave your private memory. Every step is a span in the Observe hub.
+The writer asks both scopes and prints which one answered. Before step 3, the teammate's writer gets nothing from either. After it, `knowledgebase_search` returns the promoted records and nothing else, and the promoted memories leave your private memory.
 
 ## Why the researcher calls memory_add and not conversation_add_message
 
@@ -34,7 +34,7 @@ Meko has two write paths, and they do different things. Read from `src/tools.py`
 
 | Call | What the server does with your text | Who decides what is stored |
 | --- | --- | --- |
-| `conversation_add_message(input, output)` | Stores the turn verbatim in the conversation trace. Then runs mem0 extraction with `infer=True` over the `input` side only, and only if the turn is substantive. The `output` is never passed to the extractor. | The extractor. It rewrites the user's words into facts it thinks are durable, and it may return nothing. |
+| `conversation_add_message(input, output)` | Stores the turn word for word in the conversation trace. Then runs mem0 extraction with `infer=True` over the `input` side only, and only if the turn is substantive. The `output` is never passed to the extractor. | The extractor. It rewrites the user's words into facts it thinks are durable, and it may return nothing. |
 | `memory_add(text)` | Calls mem0 with `infer=False`. One memory row, your text as written, plus entity links for search. | Your code. |
 
 The researcher's decisions are on the output side of its turn: the question goes in, the decisions come out. If the demo posted that turn with `conversation_add_message`, the extractor would read the question, not the answer, and the decisions would never become memories. The September 15 proof run on production showed exactly that: a decision that lived only in the assistant output produced no extracted memory, and only the explicit `memory_add` record was searchable.
@@ -43,7 +43,7 @@ So `record_decision()` calls `memory_add`, and three things follow:
 
 1. The text is persisted as written. `infer=False` skips the rewrite, so the reason and the rejected alternative survive as the agent stated them.
 2. The write happens on every run, because it is a line in the loop, not a tool the model may or may not call.
-3. Each call is its own span in the trace, so the audit shows three writes with their text and timing.
+3. Each call shows up on its own in the run's trace, with the text it wrote and how long it took, so you can audit the three writes later.
 
 `conversation_add_message` is still the right call for a transcript. If you want the researcher's raw question and answer on record as well, post the turn after `record_decision()`. Be aware that extraction will then run on the question and may add a derived memory such as "user asked how http_client.py should retry," which changes the result counts in `writer.py`.
 
@@ -75,7 +75,7 @@ MEKO_AGENT_ID=researcher:retry-demo uv run researcher.py
 MEKO_AGENT_ID=writer:retry-demo uv run writer.py
 ```
 
-Each run prints a trace id. Open it in the Observe hub of your datapack at cloud.mekodata.ai to see every `memory_add`, `memory_search`, and `knowledgebase_search` as a span.
+Each run prints a trace id. Paste it into the Observe hub of your datapack at cloud.mekodata.ai and you get the run laid out call by call: what the researcher wrote, what the writer searched for, and what each search returned.
 
 ## Share with a teammate
 
