@@ -1,6 +1,6 @@
 # meko-agent-handoff
 
-Two small Python programs that share what they learn through Meko.
+Two small Python-based agents that share what they learn through Meko.
 
 The first, `researcher.py`, asks a model how an HTTP client should retry failed requests and saves each decision it reaches. The second, `writer.py`, starts in a new terminal with nothing in its memory, reads those decisions back, and writes a pull request description from them. Then a person picks which decisions the whole team should see.
 
