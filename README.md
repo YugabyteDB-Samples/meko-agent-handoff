@@ -48,7 +48,7 @@ On your machine:
    With SSH keys on GitHub, `git clone git@github.com:YugabyteDB-Samples/meko-agent-handoff.git` also works.
 7. `cp .env.example .env`, then paste the API key into `MEKO_API_KEY` and the UUID into `MEKO_DATAPACK_ID`. Leave `MODEL_PROVIDER` empty.
 
-The scripts read `.env` unless `ENV_FILE` names another file. The teammate's file, `.env.teammate`, is created between runs 2 and 3 in Run it, once the second user exists.
+The demo uses three env files and no others. `.env.example` is the template in the repo. `.env` holds user 1's key and is what the scripts read by default. `.env.teammate` holds user 2's key and is read only when a command sets `ENV_FILE=.env.teammate`; it is created between runs 2 and 3 in Run it, once the second user exists.
 
 Every command sets `MEKO_AGENT_ID`, the name the script writes under. It is required; the scripts stop with a message saying so if it is missing.
 
