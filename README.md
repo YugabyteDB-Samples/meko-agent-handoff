@@ -58,6 +58,8 @@ The demo uses two Meko user accounts on one datapack. A Meko user account is ide
 
 Start from an empty datapack. To check with one account, open the datapack's Learnings tab in the portal and confirm it lists no memories, or run the command for run 2 and expect `No decided dishes found`. Runs 1, 2 and 4 use user 1's API key in `.env`. Runs 3 and 5 use user 2's key in `.env.teammate`, selected with `ENV_FILE`.
 
+Run every command below in a terminal on your machine, from the `meko-agent-handoff` folder you cloned into. The account a run uses is chosen by the env file: commands with no prefix read `.env` and run as user 1; commands that start with `ENV_FILE=.env.teammate` read that file and run as user 2. The same terminal works for all five.
+
 The trace ids and the ids in the promote result shown in the output blocks below are examples. Yours will differ on every run. Match the `memory` and `shared knowledge` counts and the message text.
 
 ### 1. The chef records the menu decisions
@@ -141,7 +143,7 @@ Seven records exist on the datapack. None is visible to user 2.
 
 ### 4. The chef promotes the decided dishes
 
-`chef.py --promote` runs in Meko user 1's account again, using the key in `.env`. It searches user 1's memory and applies `allowed_by_policy()` to each record: a `DECISION` with a `REASON` is promoted; an `OPEN_QUESTION` is not; `INGREDIENTS` records are not, because they are not menu items. It then calls `memory_promote` with the three approved ids. Expected output: seven verdicts, then the promote result with three ids.
+Run this in the terminal from the repo folder, with no `ENV_FILE` prefix, so it reads `.env` and runs in Meko user 1's account. It searches user 1's memory and applies `allowed_by_policy()` to each record: a `DECISION` with a `REASON` is promoted; an `OPEN_QUESTION` is not; `INGREDIENTS` records are not, because they are not menu items. It then calls `memory_promote` with the three approved ids. Expected output: seven verdicts, then the promote result with three ids.
 
 ```bash
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote
