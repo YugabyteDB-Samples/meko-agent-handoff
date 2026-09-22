@@ -49,8 +49,18 @@ At [cloud.mekodata.ai](https://cloud.mekodata.ai), signed in as user 1:
    uv sync
    ```
 
-   With SSH keys on GitHub, `git clone git@github.com:YugabyteDB-Samples/meko-agent-handoff.git` also works.
-7. In the same terminal, now inside the `meko-agent-handoff` folder, run `cp .env.example .env`. Then open `.env` in your editor, paste user 1's API key after `MEKO_API_KEY=` and the datapack UUID after `MEKO_DATAPACK_ID=`, and save. Leave `MODEL_PROVIDER` empty.
+   If you use SSH keys with GitHub, this clone command works in place of the first line above:
+
+   ```bash
+   git clone git@github.com:YugabyteDB-Samples/meko-agent-handoff.git
+   ```
+7. In the same terminal, now inside the `meko-agent-handoff` folder, run this command to create `.env` from the template:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Then open `.env` in your editor, paste user 1's API key after `MEKO_API_KEY=` and the datapack UUID after `MEKO_DATAPACK_ID=`, and save. Leave `MODEL_PROVIDER` empty.
 
 ### User 2, the second Meko account
 
@@ -59,7 +69,13 @@ User 2 needs its own Meko user account. If you do not have one, sign up at [clou
 8. As user 1, in the portal, open the datapack and share it with user 2's email address.
 9. Sign out of the portal, then sign in as user 2. Accept the share if the portal asks.
 10. As user 2, create an API key and copy it. This key acts as user 2.
-11. Back in the terminal, in the `meko-agent-handoff` folder, run `cp .env .env.teammate`. Then open `.env.teammate` in your editor, replace the value after `MEKO_API_KEY=` with user 2's key, and save. Leave `MEKO_DATAPACK_ID` as it is; both users point at the same datapack.
+11. Back in the terminal, in the `meko-agent-handoff` folder, run this command to create `.env.teammate` as a copy of `.env`:
+
+    ```bash
+    cp .env .env.teammate
+    ```
+
+    Then open `.env.teammate` in your editor, replace the value after `MEKO_API_KEY=` with user 2's key, and save. Leave `MEKO_DATAPACK_ID` as it is; both users point at the same datapack.
 
 You now have three env files. `.env.example` is the template in the repo. `.env` holds user 1's key and is what the scripts read by default. `.env.teammate` holds user 2's key and is read only when a command ends with `--env .env.teammate`. The two files differ in one line, the key, and that line is what makes a run user 1's or user 2's.
 
