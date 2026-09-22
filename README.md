@@ -66,7 +66,7 @@ cp .env.example .env
 
 Open `.env` and fill in `MEKO_API_KEY` and `MEKO_DATAPACK_ID`. That is enough to run the researcher and the writer: with `MODEL_PROVIDER` left empty, the researcher replays the recorded answer in `researcher_example.json` and writes those records to your datapack, and the writer builds the description from whatever it recalls.
 
-To have them call a model instead, set `MODEL_PROVIDER` to `anthropic`, `bedrock`, or `vertex` and fill in that provider's lines. `.env.example` shows what each one reads: an API key for Anthropic, your AWS credentials for Bedrock, and Application Default Credentials plus a project for Vertex.
+To have them call a model instead, set `MODEL_PROVIDER` to `anthropic`, `bedrock`, or `vertex` and fill in that provider's lines. `.env.example` shows what each one reads: an API key for Anthropic, a Bedrock API key and region for Bedrock, and Application Default Credentials plus a project for Vertex.
 
 ## Run it
 

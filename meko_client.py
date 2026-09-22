@@ -70,8 +70,9 @@ def make_model(provider: str | None = None):
     """Build a Strands model for the provider named by MODEL_PROVIDER (or the argument).
 
       - "anthropic": Anthropic API. Needs ANTHROPIC_API_KEY.
-      - "bedrock"  : Amazon Bedrock, Strands' built-in default. Needs AWS credentials
-                     with Bedrock model access. Returns None so Strands uses its default.
+      - "bedrock"  : Amazon Bedrock, Strands' built-in default. Needs a Bedrock API key
+                     in AWS_BEARER_TOKEN_BEDROCK (or an AWS profile or role) and
+                     AWS_REGION. Returns None so Strands uses its default.
       - "vertex"   : Vertex AI through LiteLLM. No API key; it uses Application Default
                      Credentials from `gcloud auth application-default login`.
                      Reads VERTEX_PROJECT, VERTEX_LOCATION, and VERTEX_MODEL_ID.
