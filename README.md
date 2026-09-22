@@ -66,6 +66,8 @@ The trace ids and the ids in the promote result shown in the output blocks below
 
 `chef.py` runs in Meko user 1's account, using the API key in `.env`. It asks the model for three decided dishes and one open question, then writes each finding to user 1's memory with `memory_add`. The model has no Meko tools. The write happens in code on every run. Expected output: a trace id and four `recorded:` lines.
 
+In your terminal, from the `meko-agent-handoff` folder, run this command:
+
 ```bash
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py
 ```
@@ -83,6 +85,8 @@ With `MODEL_PROVIDER` empty, the answer comes from `chef_example.json`, so the f
 ### 2. The kitchen manager adds the shopping notes
 
 `kitchen_manager.py` is a separate process and shares no state with `chef.py`. It runs in the same Meko user account as the chef, user 1, using the same API key in `.env`, so `memory_search` returns the chef's four records and `knowledgebase_search` returns nothing. It keeps the three `DECISION` records, looks up each dish's ingredients in `kitchen_manager_example.json`, and writes one `INGREDIENTS` record per dish with `memory_add` under its own agent id. Expected output: `memory: 4 results` with each row tagged `[chef:menu-demo]`, `shared knowledge: 0 results`, then three `recorded:` lines and the shopping list.
+
+In the same terminal, run this command:
 
 ```bash
 MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py
@@ -127,6 +131,8 @@ Then on your machine, `cp .env .env.teammate` and replace `MEKO_API_KEY` with us
 
 `restaurant_manager.py` runs in Meko user 2's account, using the API key in `.env.teammate`, and makes the same two searches. Memory in Meko is private to the user account that wrote it, so user 2 cannot read user 1's memory, and nothing has been promoted, so both searches return zero results. The script reports that the menu is not ready and exits without writing. Expected output: `memory: 0 results` and `shared knowledge: 0 results`, then the not-ready message.
 
+In the same terminal, run this command. The `ENV_FILE=.env.teammate` at the front makes it user 2's run:
+
 ```bash
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
 ```
@@ -143,7 +149,9 @@ Seven records exist on the datapack. None is visible to user 2.
 
 ### 4. The chef promotes the decided dishes
 
-Run this in the terminal from the repo folder. It reads `.env` and runs in Meko user 1's account. It searches user 1's memory and applies `allowed_by_policy()` to each record: a `DECISION` with a `REASON` is promoted; an `OPEN_QUESTION` is not; `INGREDIENTS` records are not, because they are not menu items. It then calls `memory_promote` with the three approved ids. Expected output: seven verdicts, then the promote result with three ids.
+`chef.py --promote` reads `.env` and runs in Meko user 1's account. It searches user 1's memory and applies `allowed_by_policy()` to each record: a `DECISION` with a `REASON` is promoted; an `OPEN_QUESTION` is not; `INGREDIENTS` records are not, because they are not menu items. It then calls `memory_promote` with the three approved ids. Expected output: seven verdicts, then the promote result with three ids.
+
+In the same terminal, run this command:
 
 ```bash
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote
@@ -173,6 +181,8 @@ The rule is code. It runs in Meko user 1's account with the agent id `chef:menu-
 ### 5. The restaurant manager prints the menu
 
 Same command as run 3, in Meko user 2's account with the key in `.env.teammate`. `knowledgebase_search` now returns the three promoted records, each tagged `chef:menu-demo`, and the script prints the menu. Expected output: `memory: 0 results` and `shared knowledge: 3 results`, then the menu.
+
+In the same terminal, run this command. The `ENV_FILE=.env.teammate` at the front makes it user 2's run:
 
 ```bash
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
@@ -208,11 +218,15 @@ Each run prints a trace id on its first line. In the portal at [cloud.mekodata.a
 
 `promote.py` is the person-in-the-loop version of run 4. It searches user 1's memory and asks y or n for each record before calling `memory_promote`.
 
+To run it, from the repo folder:
+
 ```bash
 MEKO_AGENT_ID=promote:menu-demo uv run promote.py
 ```
 
 `prune.py` finds memories that never match the questions this project asks and offers to delete or correct each one.
+
+To run it, from the repo folder:
 
 ```bash
 MEKO_AGENT_ID=prune:menu-demo uv run prune.py
