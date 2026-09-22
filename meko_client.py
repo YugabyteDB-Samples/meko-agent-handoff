@@ -112,8 +112,10 @@ def make_model(provider: str | None = None):
             raise RuntimeError("MODEL_PROVIDER=anthropic but ANTHROPIC_API_KEY is not set.")
         from strands.models.anthropic import AnthropicModel
 
-        model_id = os.environ.get("ANTHROPIC_MODEL_ID", "claude-sonnet-4-20250514").strip()
-        return AnthropicModel(model_id=model_id)
+        # Strands requires max_tokens for this provider. Current Claude models think
+        # before answering and that counts toward the limit, so leave room.
+        model_id = os.environ.get("ANTHROPIC_MODEL_ID", "claude-opus-5").strip()
+        return AnthropicModel(model_id=model_id, max_tokens=16000)
 
     if provider == "bedrock":
         return None  # Strands default: Amazon Bedrock.
