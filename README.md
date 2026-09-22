@@ -24,7 +24,10 @@ The words: a **datapack** is the workspace. A **memory** belongs to your account
 
 ## How a decision travels
 
-![Animated diagram of the five runs: the chef writes to your memory, the kitchen manager reads it and adds notes, the teammate's restaurant manager sees nothing, the chef promotes the decided dishes through the gate into Shared Knowledge, and the restaurant manager reads them back](docs/handoff-light.gif)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/handoff-dark.gif">
+  <img src="docs/handoff-light.gif" width="900" alt="Animated diagram of the five runs: the chef writes to your memory, the kitchen manager reads it and adds notes, the teammate's restaurant manager sees nothing, the chef promotes the decided dishes through the gate into Shared Knowledge, and the restaurant manager reads them back">
+</picture>
 
 Purple is your account, orange is the gate, green is Shared Knowledge, gray is the teammate. Step 3 runs before the gate, so the empty result proves the isolation; step 5 is the same command after it.
 
