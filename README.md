@@ -27,14 +27,18 @@ Purple is your Meko user account, orange is the gate, green is Shared Knowledge,
 
 ## Set up
 
-In the portal at [cloud.mekodata.ai](https://cloud.mekodata.ai), as user 1:
+The demo needs two Meko user accounts, one datapack, and one machine. User 1 owns the datapack and runs the chef and the kitchen manager. User 2 is a second Meko user account with a different email address, is given access to the same datapack, and runs the restaurant manager. Both accounts' keys live in env files in the same repo folder on your machine; nothing runs on a second computer.
+
+### User 1, in the portal
+
+At [cloud.mekodata.ai](https://cloud.mekodata.ai), signed in as user 1:
 
 1. Sign up, or sign in.
 2. Create a datapack. This README assumes it is named `meko-agent-handoff`.
 3. Open the datapack's page and copy its UUID. The scripts need the UUID, not the name.
 4. Create an API key and copy it. A key is created under one Meko user account and acts as that account; whichever key a script reads from its env file decides which user the run is.
 
-On your machine:
+### Your machine
 
 5. Install Python 3.13 or later and [uv](https://docs.astral.sh/uv/).
 6. Clone and install:
@@ -46,9 +50,18 @@ On your machine:
    ```
 
    With SSH keys on GitHub, `git clone git@github.com:YugabyteDB-Samples/meko-agent-handoff.git` also works.
-7. `cp .env.example .env`, then paste the API key into `MEKO_API_KEY` and the UUID into `MEKO_DATAPACK_ID`. Leave `MODEL_PROVIDER` empty.
+7. `cp .env.example .env`, then paste user 1's API key into `MEKO_API_KEY` and the datapack UUID into `MEKO_DATAPACK_ID`. Leave `MODEL_PROVIDER` empty.
 
-The demo uses three env files. `.env.example` is the template in the repo. `.env` holds user 1's key and is what the scripts read by default. `.env.teammate` holds user 2's key and is read only when a command ends with `--env .env.teammate`; it is created between runs 2 and 3 in Run it, once the second user exists.
+### User 2, the second Meko account
+
+User 2 needs its own Meko user account. If you do not have one, sign up at [cloud.mekodata.ai](https://cloud.mekodata.ai) with a second email address, or ask a colleague to be user 2. You can do these steps now, or between runs 2 and 3 in Run it; the demo reminds you.
+
+8. As user 1, in the portal, open the datapack and share it with user 2's email address.
+9. Sign out of the portal, then sign in as user 2. Accept the share if the portal asks.
+10. As user 2, create an API key and copy it. This key acts as user 2.
+11. On your machine, in the repo folder: `cp .env .env.teammate`, then replace the value of `MEKO_API_KEY` with user 2's key. Leave `MEKO_DATAPACK_ID` as it is; both users point at the same datapack.
+
+You now have three env files. `.env.example` is the template in the repo. `.env` holds user 1's key and is what the scripts read by default. `.env.teammate` holds user 2's key and is read only when a command ends with `--env .env.teammate`. The two files differ in one line, the key, and that line is what makes a run user 1's or user 2's.
 
 Every command sets `MEKO_AGENT_ID`, the name the script writes under. It is required; the scripts stop with a message saying so if it is missing.
 
@@ -121,13 +134,7 @@ Memory is scoped to the Meko user account, not to the agent. The `agent_id` on e
 
 ### 3. The restaurant manager finds nothing
 
-Before this run, in the portal at [cloud.mekodata.ai](https://cloud.mekodata.ai):
-
-1. As user 1, open the datapack and share it with user 2's email address.
-2. Sign out, then sign in as user 2. Accept the share if the portal asks.
-3. As user 2, create an API key and copy it.
-
-Then on your machine, `cp .env .env.teammate` and replace `MEKO_API_KEY` with user 2's key. Keep `MEKO_DATAPACK_ID` the same. Skip any of these and run 3 fails: without the share, user 2 cannot see the datapack; without user 2's key in `.env.teammate`, the run is still user 1 and prints the menu instead of the not-ready message.
+This run needs user 2 ready: the datapack shared with user 2, user 2's API key created, and that key in `.env.teammate`. Those are steps 8 to 11 of Set up; do them now if you have not. Without the share, user 2 cannot see the datapack and the run errors. Without user 2's key in `.env.teammate`, the run is still user 1 and prints the menu instead of the not-ready message.
 
 `restaurant_manager.py` runs in Meko user 2's account, using the API key in `.env.teammate`, and makes the same two searches. Memory in Meko is private to the user account that wrote it, so user 2 cannot read user 1's memory, and nothing has been promoted, so both searches return zero results. The script reports that the menu is not ready and exits without writing. Expected output: `memory: 0 results` and `shared knowledge: 0 results`, then the not-ready message.
 
