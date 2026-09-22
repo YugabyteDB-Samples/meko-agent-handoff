@@ -143,7 +143,7 @@ Seven records exist on the datapack. None is visible to user 2.
 
 ### 4. The chef promotes the decided dishes
 
-Run this in the terminal from the repo folder, with no `ENV_FILE` prefix, so it reads `.env` and runs in Meko user 1's account. It searches user 1's memory and applies `allowed_by_policy()` to each record: a `DECISION` with a `REASON` is promoted; an `OPEN_QUESTION` is not; `INGREDIENTS` records are not, because they are not menu items. It then calls `memory_promote` with the three approved ids. Expected output: seven verdicts, then the promote result with three ids.
+Run this in the terminal from the repo folder. It reads `.env` and runs in Meko user 1's account. It searches user 1's memory and applies `allowed_by_policy()` to each record: a `DECISION` with a `REASON` is promoted; an `OPEN_QUESTION` is not; `INGREDIENTS` records are not, because they are not menu items. It then calls `memory_promote` with the three approved ids. Expected output: seven verdicts, then the promote result with three ids.
 
 ```bash
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote
