@@ -7,13 +7,28 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import uuid
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Settings come from .env. Set ENV_FILE to a different file to run as another Meko
-# user, for example ENV_FILE=.env.teammate.
-load_dotenv(os.environ.get("ENV_FILE", ".env"), override=True)
+
+
+def _env_file() -> str:
+    """Settings come from .env, or from the file named after --env, e.g. --env .env.teammate."""
+    if "--env" in sys.argv:
+        i = sys.argv.index("--env")
+        if i + 1 >= len(sys.argv):
+            raise SystemExit("--env needs a file name, for example: --env .env.teammate")
+        return sys.argv[i + 1]
+    return ".env"
+
+
+SETTINGS_FILE = Path(_env_file())
+if not SETTINGS_FILE.is_file():
+    raise SystemExit(f"{SETTINGS_FILE} not found. Copy .env.example to {SETTINGS_FILE} and fill it in.")
+load_dotenv(SETTINGS_FILE, override=True)
 
 from meko_client import make_meko_mcp_client
 
