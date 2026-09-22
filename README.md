@@ -53,7 +53,7 @@ You need three things.
 | --- | --- |
 | Python 3.13 or later and uv | [uv](https://docs.astral.sh/uv/) installs the dependencies. |
 | A Meko account | https://cloud.mekodata.ai. Signing up creates a datapack and an API token. Copy the token, and copy the datapack's ID from the datapack page. |
-| A model key, if you want live answers | Optional. Anthropic, Amazon Bedrock, or Google Vertex AI all work. Without one, the researcher replays a recorded answer and the writer formats the description from the records. |
+| A model key, if you want live answers | Optional. Anthropic, Amazon Bedrock, or Google's Gemini Enterprise Agent Platform (formerly Vertex AI) all work. Without one, the researcher replays a recorded answer and the writer formats the description from the records. |
 
 Then:
 
@@ -66,7 +66,7 @@ cp .env.example .env
 
 Open `.env` and fill in `MEKO_API_KEY` and `MEKO_DATAPACK_ID`. That is enough to run the researcher and the writer: with `MODEL_PROVIDER` left empty, the researcher replays the recorded answer in `researcher_example.json` and writes those records to your datapack, and the writer builds the description from whatever it recalls.
 
-To have them call a model instead, set `MODEL_PROVIDER` to `anthropic`, `bedrock`, or `vertex` and fill in that provider's lines. `.env.example` shows what each one reads: an API key for Anthropic, a Bedrock API key and region for Bedrock, and Application Default Credentials plus a project for Vertex.
+To have them call a model instead, set `MODEL_PROVIDER` to `anthropic`, `bedrock`, or `vertex` and fill in that provider's lines. `.env.example` shows what each one reads: an API key for Anthropic, a Bedrock API key and region for Bedrock, and Application Default Credentials plus a project for Gemini Enterprise Agent Platform.
 
 ## Run it
 

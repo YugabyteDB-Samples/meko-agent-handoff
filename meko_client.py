@@ -5,8 +5,8 @@
      `Authorization: Bearer <key>` header on every request.
 
   2. make_model() builds the model, if you use one. The scripts only call it when
-     MODEL_PROVIDER is set. You bring your own key for Anthropic, Amazon Bedrock, or
-     Google Vertex AI; Meko never sees it.
+     MODEL_PROVIDER is set. You bring your own access to Anthropic, Amazon Bedrock, or
+     Google's Gemini Enterprise Agent Platform (formerly Vertex AI); Meko never sees it.
 
 The two are separate on purpose. The Meko key unlocks memory, Shared Knowledge, and
 the trace. A model key, if any, only powers the thinking.
@@ -73,7 +73,8 @@ def make_model(provider: str | None = None):
       - "bedrock"  : Amazon Bedrock, Strands' built-in default. Needs a Bedrock API key
                      in AWS_BEARER_TOKEN_BEDROCK (or an AWS profile or role) and
                      AWS_REGION. Returns None so Strands uses its default.
-      - "vertex"   : Vertex AI through LiteLLM. No API key; it uses Application Default
+      - "vertex"   : Gemini Enterprise Agent Platform (formerly Vertex AI) through LiteLLM.
+                     No API key; it uses Application Default
                      Credentials from `gcloud auth application-default login`.
                      Reads VERTEX_PROJECT, VERTEX_LOCATION, and VERTEX_MODEL_ID.
     """
@@ -91,8 +92,8 @@ def make_model(provider: str | None = None):
         location = os.environ.get("VERTEX_LOCATION", "us-central1").strip()
         if not project:
             raise RuntimeError(
-                "VERTEX_PROJECT (or GOOGLE_CLOUD_PROJECT) is not set. Point it at a GCP "
-                "project you can use Vertex AI in (with roles/aiplatform.user), and run "
+                "VERTEX_PROJECT (or GOOGLE_CLOUD_PROJECT) is not set. Point it at a Google Cloud "
+                "project with Gemini Enterprise Agent Platform access (roles/aiplatform.user), and run "
                 "`gcloud auth application-default login` first."
             )
         return LiteLLMModel(
