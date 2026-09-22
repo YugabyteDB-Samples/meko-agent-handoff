@@ -6,22 +6,6 @@ No model key is needed. In place of a model, the scripts use example answers sto
 
 This is the code from the webinar "Shared Memory for AI Coding Agents: A Live Build with Meko".
 
-## The cast
-
-The scripts use a restaurant story so the flow reads without knowing the code. Each one stands in for a role you would find in an agent system.
-
-| Script | Story role | Agent role | Meko calls |
-| --- | --- | --- | --- |
-| `chef.py` | Head chef decides the menu | A worker agent that makes decisions (your coding agent, a research agent) | `memory_add`, four records, under `chef:menu-demo` |
-| `kitchen_manager.py` | Kitchen manager works out what to buy | A second worker on the same account that consumes those decisions (planner, executor) | `memory_search`, `knowledgebase_search`, then `memory_add`, three records, under its own agent_id |
-| `chef.py --promote` | The chef publishes the decided dishes | An orchestrator or governance policy that decides what becomes team knowledge | `memory_search`, a rule in code, `memory_promote` |
-| `restaurant_manager.py` | Restaurant manager prints the menu | A consumer on another account (a reviewer agent, a teammate's agent) | both searches; stops if nothing is visible |
-| `promote.py` | A person chooses dishes to publish | Human-in-the-loop review | `memory_promote`, one y/n per memory |
-| `prune.py` | Clearing the pantry | Memory hygiene | `memory_delete_by_id`, `memory_update` |
-| Observe hub (UI) | The kitchen log | Observability | every call, under one trace id per run |
-
-The words: a **datapack** is the workspace. A **memory** belongs to your account; every agent you run can read it, and each row keeps the agent_id that wrote it. **Shared Knowledge** is the datapack's; everyone it is shared with can read it. **Promote** moves a memory into Shared Knowledge, one way, and needs an owner or maintainer key. A **trace** is the record of one run.
-
 ## How a decision travels
 
 <picture>
@@ -189,6 +173,22 @@ The open question and the shopping list are not on the menu. They never left the
 ### Read the traces
 
 Every run printed a trace id. Open one in the Observe hub for the datapack at cloud.mekodata.ai and the run is laid out call by call: the question, the answer, the reasoning, each search and what it returned, each memory written. The trace from run 3, two empty searches with a timestamp, is the one to keep. It proves the teammate's agent did not have the decision, rather than asserting it.
+
+## The cast
+
+The scripts use a restaurant story so the flow reads without knowing the code. Each one stands in for a role you would find in an agent system.
+
+| Script | Story role | Agent role | Meko calls |
+| --- | --- | --- | --- |
+| `chef.py` | Head chef decides the menu | A worker agent that makes decisions (your coding agent, a research agent) | `memory_add`, four records, under `chef:menu-demo` |
+| `kitchen_manager.py` | Kitchen manager works out what to buy | A second worker on the same account that consumes those decisions (planner, executor) | `memory_search`, `knowledgebase_search`, then `memory_add`, three records, under its own agent_id |
+| `chef.py --promote` | The chef publishes the decided dishes | An orchestrator or governance policy that decides what becomes team knowledge | `memory_search`, a rule in code, `memory_promote` |
+| `restaurant_manager.py` | Restaurant manager prints the menu | A consumer on another account (a reviewer agent, a teammate's agent) | both searches; stops if nothing is visible |
+| `promote.py` | A person chooses dishes to publish | Human-in-the-loop review | `memory_promote`, one y/n per memory |
+| `prune.py` | Clearing the pantry | Memory hygiene | `memory_delete_by_id`, `memory_update` |
+| Observe hub (UI) | The kitchen log | Observability | every call, under one trace id per run |
+
+The words: a **datapack** is the workspace. A **memory** belongs to your account; every agent you run can read it, and each row keeps the agent_id that wrote it. **Shared Knowledge** is the datapack's; everyone it is shared with can read it. **Promote** moves a memory into Shared Knowledge, one way, and needs an owner or maintainer key. A **trace** is the record of one run.
 
 ## What it demonstrates
 
