@@ -6,13 +6,13 @@ readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.13"
 dependencies = [
-    # Strands Agents SDK. The [litellm] extra pulls in LiteLLM, which routes the
-    # default Vertex AI (Gemini via ADC) inference path. mcp (the MCP client used
-    # in meko_client.py) comes in transitively via strands-agents.
-    "strands-agents[litellm]>=1.48.0",
+    # Strands Agents SDK with both provider extras this sample can use:
+    # [anthropic] for MODEL_PROVIDER=anthropic (the .env.example default) and
+    # [litellm] for MODEL_PROVIDER=vertex. mcp comes in transitively via strands-agents.
+    "strands-agents[anthropic,litellm]>=1.48.0",
     # Loads .env for local runs.
     "python-dotenv>=1.2.2",
-    # Needed for the Vertex AI / Application Default Credentials path.
+    # Only used by the Vertex AI / Application Default Credentials path.
     "google-auth>=2.56.0",
 ]
 
@@ -22,13 +22,13 @@ dev = [
 ]
 
 [tool.uv]
-# Flat-layout sample (agent.py / meko_client.py are run directly, not installed
+# Flat-layout sample (the scripts and meko_client.py are run directly, not installed
 # as a package), so uv should not try to build/install this project itself.
 package = false
 
 [tool.pytest.ini_options]
-# Flat layout: put the repo root on sys.path so tests can `import agent` /
-# `import meko_client` without a package install.
+# Flat layout: put the repo root on sys.path so tests can import the scripts
+# and meko_client without a package install.
 pythonpath = ["."]
 markers = [
     "integration: exercises real Meko (and optionally real inference); skipped unless credentials are present. Opt in with -m integration.",
