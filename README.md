@@ -54,25 +54,35 @@ Every command sets `MEKO_AGENT_ID`, the name the script writes under. It is requ
 
 Start from an empty datapack. Steps 1, 2 and 4 run on your key; steps 3 and 5 run on the teammate's key through `ENV_FILE`.
 
-**1. Record.** `MEKO_AGENT_ID=chef:menu-demo uv run chef.py`
+**1. The chef plans the menu.** The chef settles on three dishes for autumn and leaves one question open, then writes each one down. The model does the deciding; plain Python does the writing, one `memory_add` per finding, so the notes exist whether or not the model thought to save them.
 
-Expect a `trace:` id, then four `recorded:` lines: three `DECISION:` records and one `OPEN_QUESTION:`. The script has no Meko tools in the model's hands; plain Python wrote each finding with `memory_add`, as written. With no model configured the answer is the example in `chef_example.json`, so the four lines are the same every time.
+`MEKO_AGENT_ID=chef:menu-demo uv run chef.py`
 
-**2. Recall on the same account.** `MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py`
+Expect a `trace:` id, then four `recorded:` lines: three `DECISION:` and one `OPEN_QUESTION:`. With no model configured the answer is the example in `chef_example.json`, so the four lines are the same every time.
 
-Expect `memory: 4 results`, each tagged `[chef:menu-demo]`, and `shared knowledge: 0 results`. Then three `recorded: INGREDIENTS:` lines under its own agent_id and a `# To buy` list. A new process found the first script's records because memory is per account, and the labels say who wrote what.
+**2. The kitchen manager reads the menu and writes the shopping list.** A new process starts with nothing in its head, on the same account as the chef. It finds the chef's four notes, keeps the three decided dishes, works out what each needs, and leaves a note of its own for each one.
 
-**3. Recall on the teammate's account.** `ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py`
+`MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py`
 
-Expect `memory: 0 results`, `shared knowledge: 0 results`, and `The menu is not ready yet. Nothing has been shared with the team.` Nothing has been promoted, so the other account sees nothing and the script stops rather than guess.
+Expect `memory: 4 results`, each tagged `[chef:menu-demo]`, and `shared knowledge: 0 results`. Then three `recorded: INGREDIENTS:` lines under the kitchen manager's own agent_id and a `# To buy` list. Memory is per account, and the labels say who wrote what.
 
-**4. Share by policy.** `MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote`
+**3. The restaurant manager asks if the menu is ready.** Front of house runs on a teammate's account. It looks in its own memory and in Shared Knowledge and finds nothing, because nothing has left the kitchen yet. It says so and stops instead of making up a menu.
 
-Expect a verdict for every private record it finds: `PROMOTE` for the three decisions, `KEEP` for the open question and for the kitchen's ingredient notes, each with its reason. Then the `memory_promote` result with three ids. The rule is in `allowed_by_policy()`: a decision with a reason is shared, an open question is not, and another agent's notes are not. It runs under `chef:menu-demo`, so the trace shows which agent shared what.
+`ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py`
 
-**5. Recall on the teammate's account again.** Same command as step 3.
+Expect `memory: 0 results`, `shared knowledge: 0 results`, and `The menu is not ready yet. Nothing has been shared with the team.`
 
-Expect `memory: 0 results`, `shared knowledge: 3 results`, each tagged `[chef:menu-demo]`, then the menu with `Decided by: chef:menu-demo (Shared Knowledge)` under each dish. The open question and the ingredients are not there; they were never shared.
+**4. The chef shares the decided dishes.** The chef goes back over everything in memory and applies one rule: a decided dish with a reason goes on the menu, an open question stays private, and the kitchen's shopping notes are not the team's business. The three dishes move to Shared Knowledge.
+
+`MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote`
+
+Expect a verdict for every private record: `PROMOTE` for the three dishes, `KEEP` for the open question and the ingredient notes, each with its reason. Then the `memory_promote` result with three ids. The rule is `allowed_by_policy()` in `chef.py`, and it runs under `chef:menu-demo`, so the trace shows which agent shared what.
+
+**5. The restaurant manager asks again and prints the menu.** Same account, same command as step 3. This time Shared Knowledge has the three dishes, each still marked as the chef's, and the menu goes up. The open question and the shopping list never left the kitchen.
+
+`ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py`
+
+Expect `memory: 0 results`, `shared knowledge: 3 results`, each tagged `[chef:menu-demo]`, then the menu with `Decided by: chef:menu-demo (Shared Knowledge)` under each dish.
 
 Each run prints a trace id. Open it in the Observe hub for the datapack at cloud.mekodata.ai to see the run call by call: the question, the answer, the reasoning, each search and its results, each memory written. The trace from step 3, with both searches empty and a timestamp, is the one to keep.
 
