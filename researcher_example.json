@@ -7,14 +7,14 @@
   },
   {
     "kind": "decision",
-    "text": "Use exponential backoff with full jitter: delay = random(0, min(cap, base * 2**attempt)), with base=0.5s, cap=30s, max 3 retries by default.",
+    "text": "Retry with exponential backoff and full jitter: wait random(0, min(30s, 0.5s * 2**attempt)) between attempts, up to 3 retries by default, before giving up on a retryable status code.",
     "reason": "Full jitter (per the AWS Architecture Blog analysis) spreads retry storms better than fixed or equal-jitter backoff and keeps total worst-case wait bounded. Three retries covers most transient blips without multiplying load on a struggling server by more than ~4x.",
     "rejected": "Fixed-interval retries (thundering-herd risk when many clients fail at the same moment)."
   },
   {
     "kind": "open_question",
-    "text": "Should retries be bounded by an overall deadline (total elapsed time) in addition to a max attempt count?",
-    "reason": "A per-request timeout of 30s with 3 retries can mean a 2-minute wall-clock wait, which may violate caller expectations. A total-deadline budget is more predictable but adds API surface and interacts awkwardly with Retry-After.",
+    "text": "Should Retry-After be honored, and if so, how should the seconds form and the HTTP-date form both be handled?",
+    "reason": "A server-supplied Retry-After overrides our own backoff schedule when present, but the header comes in two formats and only one is a simple integer to sleep on. Deciding this changes whether the retry loop needs a date parser.",
     "rejected": null
   }
 ]
