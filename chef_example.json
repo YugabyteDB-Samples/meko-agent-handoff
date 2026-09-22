@@ -1,0 +1,30 @@
+[
+  {
+    "kind": "decision",
+    "text": "Roasted squash soup as the starter on the autumn menu.",
+    "ingredients": ["butternut squash", "onion", "vegetable stock"],
+    "reason": "Squash is at its cheapest in October and the soup holds well across two services.",
+    "rejected": "A chilled gazpacho, which is out of season and sells poorly once the evenings turn cold."
+  },
+  {
+    "kind": "decision",
+    "text": "Mushroom and leek pie as the vegetarian main on the autumn menu.",
+    "ingredients": ["mushrooms", "leeks", "puff pastry"],
+    "reason": "The kitchen already makes the pastry for the beef pie, so the new main adds no new prep.",
+    "rejected": "A risotto, which keeps a cook at the stove for twenty minutes during service."
+  },
+  {
+    "kind": "decision",
+    "text": "Pear and almond tart as the dessert on the autumn menu.",
+    "ingredients": ["pears", "ground almonds", "butter"],
+    "reason": "Pears arrive in September and the tart bakes ahead in the morning.",
+    "rejected": "A souffle, which cannot be made ahead."
+  },
+  {
+    "kind": "open_question",
+    "text": "Should the roast chicken stay on the autumn menu, or come off to make room for a braise?",
+    "ingredients": null,
+    "reason": "It is the top seller, but a braise would reuse the squash and mushrooms already on order.",
+    "rejected": null
+  }
+]
