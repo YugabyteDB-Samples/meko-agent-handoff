@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local settings with keys. .env.example is the template and stays tracked.
+.env.*
+!.env.example
