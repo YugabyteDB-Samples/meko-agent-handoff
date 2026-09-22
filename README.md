@@ -1,81 +1,79 @@
 # meko-agent-handoff
 
-Two Python agents on the [Strands Agents SDK](https://strandsagents.com) sharing decisions through [Meko](https://mekodata.ai). One agent researches a question and records what it decided and why. A second agent, in a fresh process with no prior context, reads those decisions back. A person promotes the ones the team should build on. Afterwards you can open the run in Meko and see what each agent wrote, what it searched for, and what came back.
+Two small Python programs that share what they learn through Meko.
 
-This is the code from the webinar "Shared Memory for AI Coding Agents: A Live Build with Meko" (September 22, 2026).
+The first, `researcher.py`, asks a model how an HTTP client should retry failed requests and saves each decision it reaches. The second, `writer.py`, starts in a new terminal with nothing in its memory, reads those decisions back, and writes a pull request description from them. Then a person picks which decisions the whole team should see.
+
+This is the code from the webinar "Shared Memory for AI Coding Agents: A Live Build with Meko".
+
+## Words used in this repo
+
+| Word | What it means here |
+| --- | --- |
+| Agent | A Python script that sends a question to a model and does something with the answer. There is no framework magic here. Each agent is under 50 lines. |
+| Meko | The service where decisions are stored. Your code talks to it over MCP, a standard way for a program to call tools on a server. |
+| Datapack | Your workspace in Meko. Everything in this repo happens inside one datapack. |
+| Memory | A fact an agent saved. Your memories can be read by every agent you run, and each one records which agent wrote it. Nobody else on the datapack can read them. |
+| Shared Knowledge | The part of the datapack everyone can read. Files you upload go here, and so do memories you choose to promote. |
+| Trace | The record of one run. Every call an agent makes to Meko is listed under it, with what was sent and what came back. |
 
 ## What each file does
 
-| File | Role |
+| File | What it does |
 | --- | --- |
-| `meko.py` | The plumbing. Every Meko call goes through `call()`, which attaches the datapack, the `agent_id`, and the trace id. |
-| `researcher.py` | Agent 1. Asks a model how `http_client.py` should retry, then plain Python writes each decision with `memory_add`. The agent has no Meko tools attached. |
-| `writer.py` | Agent 2. New process, no local state. Reads your memories with `memory_search` and the team's Shared Knowledge with `knowledgebase_search`, then writes a pull request description. Stops if both come back empty. |
-| `promote.py` | The orchestrator-agent shape of promotion: code that holds `memory_promote` and asks before each call. In the webinar, promotion happens in the Meko UI instead. |
-| `orchestrator.py` | Agent-decided promotion. Code sets the guardrail (only a DECISION with a REASON is eligible, never an OPEN_QUESTION), a model judges inside it, and `memory_promote` runs under its own `agent_id` so the trace shows who made the call. `--rules` skips the model. |
-| `prune.py` | Cleanup with a person in the loop. Runs the project's questions, flags memories that never score above a floor, and offers delete or correct. |
-| `meko_client.py` | The Strands `MCPClient` wiring and the model provider setup, unchanged from [meko-agent-strands-sample](https://github.com/YugabyteDB-Samples/meko-agent-strands-sample). |
+| `researcher.py` | Asks the model a question, then saves each decision to Meko with `memory_add`. The model has no Meko tools, so it cannot decide what gets saved. |
+| `writer.py` | Reads your memories with `memory_search` and the team's Shared Knowledge with `knowledgebase_search`, then writes a pull request description. If it finds nothing, it stops instead of guessing. |
+| `orchestrator.py` | Lets an agent decide what to promote. A rule in code goes first, then a model judges what passed the rule. |
+| `promote.py` | Promotes from the terminal, asking you y or n for each memory. |
+| `prune.py` | Finds memories that never match the questions your project asks and offers to delete or correct them. |
+| `meko.py` | The shared plumbing. Every Meko call goes through one function that attaches your datapack, the agent name, and the trace id. |
+| `meko_client.py` | Connects to Meko over MCP and picks the model provider from your `.env`. |
 
-## How the pieces connect
+## How a decision travels
 
 ```mermaid
 flowchart TD
-    R["researcher.py"] -->|"1. memory_add"| M[("Your memory")]
-    M -->|"2. memory_search"| W["writer.py, your key"]
-    M -->|"3. promote, in the Learnings tab"| K[("Shared Knowledge")]
-    K -->|"4. knowledgebase_search"| T["writer.py, teammate's key"]
+R["researcher.py"] -->|"1. memory_add"| M[("Your memory")]
+M -->|"2. memory_search"| W["writer.py, your key"]
+M -->|"3. promote, in the Learnings tab"| K[("Shared Knowledge")]
+K -->|"4. knowledgebase_search"| T["writer.py, teammate's key"]
 ```
 
-The writer asks both scopes and prints which one answered. Before step 3, the teammate's writer gets nothing from either. After it, `knowledgebase_search` returns the promoted records and nothing else, and the promoted memories leave your private memory.
+Your writer finds the decisions in step 2 because both agents run under your account. A teammate's writer finds nothing until step 3, when you promote the decisions worth sharing. After that their writer finds the promoted ones in Shared Knowledge and still cannot see the rest.
 
-## Why the researcher calls memory_add and not conversation_add_message
+## Set up
 
-Meko has two write paths, and they do different things. Read from `src/tools.py` in the MCP server on September 21, 2026:
+You need three things.
 
-| Call | What the server does with your text | Who decides what is stored |
-| --- | --- | --- |
-| `conversation_add_message(input, output)` | Stores the turn word for word in the conversation trace. Then runs mem0 extraction with `infer=True` over the `input` side only, and only if the turn is substantive. The `output` is never passed to the extractor. | The extractor. It rewrites the user's words into facts it thinks are durable, and it may return nothing. |
-| `memory_add(text)` | Calls mem0 with `infer=False`. One memory row, your text as written, plus entity links for search. | Your code. |
+| What | Where to get it |
+| --- | --- |
+| Python 3.13 or later and uv | [uv](https://docs.astral.sh/uv/) installs the dependencies. |
+| A Meko account | https://cloud.mekodata.ai. Signing up creates a datapack and an API token. Copy the token, and copy the datapack's ID from the datapack page. |
+| A model key you already have | Anthropic, Amazon Bedrock, or Google Vertex AI all work. |
 
-The researcher's decisions are on the output side of its turn: the question goes in, the decisions come out. If the demo posted that turn with `conversation_add_message`, the extractor would read the question, not the answer, and the decisions would never become memories. The September 15 proof run on production showed exactly that: a decision that lived only in the assistant output produced no extracted memory, and only the explicit `memory_add` record was searchable.
-
-So `record_decision()` calls `memory_add`, and three things follow:
-
-1. The text is persisted as written. `infer=False` skips the rewrite, so the reason and the rejected alternative survive as the agent stated them.
-2. The write happens on every run, because it is a line in the loop, not a tool the model may or may not call.
-3. Each call shows up on its own in the run's trace, with the text it wrote and how long it took, so you can audit the three writes later.
-
-`conversation_add_message` is still the right call for a transcript. If you want the researcher's raw question and answer on record as well, post the turn after `record_decision()`. Be aware that extraction will then run on the question and may add a derived memory such as "user asked how http_client.py should retry," which changes the result counts in `writer.py`.
-
-## The three scopes this demo uses
-
-- A conversation is the ordered record of one run. Its id is also the trace id.
-- A memory is a fact an agent stored. Memories belong to you, every agent you run can read them, and each row keeps the `agent_id` that wrote it.
-- Shared Knowledge belongs to the datapack, the workspace your team shares. It holds uploaded documents and memories a person promoted.
-
-## Prerequisites
-
-1. Python 3.13 or later and [uv](https://docs.astral.sh/uv/).
-2. A Meko account at https://cloud.mekodata.ai. A default datapack and an API token are created on signup. Copy the token and the datapack UUID (the ID field on the datapack page).
-3. A model key you already own. `MODEL_PROVIDER` accepts `anthropic`, `bedrock`, or `vertex` (Vertex uses `gcloud auth application-default login`, no key).
-
-## Run it
+Then:
 
 ```bash
 git clone git@github.com:YugabyteDB-Samples/meko-agent-handoff.git
 cd meko-agent-handoff
 uv sync
-cp .env.example .env   # fill in MEKO_API_KEY, MEKO_DATAPACK_ID, and a model key
+cp .env.example .env
 ```
 
-Record decisions, then recall them in a second process:
+Open `.env` and fill in `MEKO_API_KEY`, `MEKO_DATAPACK_ID`, and your model key. `MODEL_PROVIDER` is `anthropic` by default. Change it to `bedrock` or `vertex` if that is the key you have.
+
+## Run it
+
+Record decisions, then read them back in a second process:
 
 ```bash
 MEKO_AGENT_ID=researcher:retry-demo uv run researcher.py
 MEKO_AGENT_ID=writer:retry-demo uv run writer.py
 ```
 
-Each run prints a trace id. Paste it into the Observe hub of your datapack at cloud.mekodata.ai and you get the run laid out call by call: what the researcher wrote, what the writer searched for, and what each search returned.
+`MEKO_AGENT_ID` is the name each agent saves under. You will see it on every memory the writer prints, which is how you know the researcher wrote them.
+
+Each run prints a trace id. Paste it into the Observe hub for your datapack at cloud.mekodata.ai and you get the run laid out call by call: what the researcher wrote, what the writer searched for, and what each search returned.
 
 ## Share with a teammate
 
@@ -85,19 +83,31 @@ Add a second Meko user to the datapack and run the writer with their token:
 ENV_FILE=.env.teammate MEKO_AGENT_ID=writer:retry-demo uv run writer.py
 ```
 
-Both searches come back empty, because your memories are yours. Open the datapack's Learnings tab, promote the decisions the team should build on, and run the same command again. `knowledgebase_search` now returns the promoted records, each labeled with the agent that wrote it, and anything you left unpromoted stays private.
+Both searches come back empty, because your memories are yours. Open the datapack's Learnings tab in the Meko UI, promote the decisions the team should build on, and run the same command again. Now `knowledgebase_search` returns the promoted decisions, each labeled with the agent that wrote it, and anything you left unpromoted stays private.
 
-Meko also has `context_search`, which queries memory, Shared Knowledge, and conversation history in one call. As of September 21, 2026 its Shared Knowledge list applied a stricter distance cutoff than `knowledgebase_search` and returned nothing for promoted memories that the direct call found, so this sample uses the direct calls.
+Meko also has `context_search`, which searches memory and Shared Knowledge in one call. This sample uses the two direct calls because, when we tested it, `context_search` returned nothing for promoted memories that `knowledgebase_search` found.
+
+## Why the researcher saves with memory_add
+
+Meko has two ways to write, and they do different things.
+
+`conversation_add_message` stores a question and answer pair in the trace, then reads the question side and pulls facts out of it. The answer side is never read. What gets stored is whatever the extractor decides is a fact, in its own words, and it may decide there is nothing.
+
+`memory_add` stores your text as one memory, as written.
+
+The researcher's decisions are in the answer, not the question. If this sample posted the turn, the extractor would read the question, never see the decisions, and save nothing useful. So `record_decision()` calls `memory_add`. The decision is saved every time the loop runs, in the words the model used, and each save shows up in the trace with its text and timing.
+
+If you also want the raw question and answer on record, post the turn with `conversation_add_message` after `record_decision()`. Expect the extractor to add a memory about the question, which changes what the writer prints.
 
 ## Let an agent decide what to promote
 
-If you run a fleet of agents behind a queue, promotion is a task an orchestrator can pick up instead of a person. `orchestrator.py` is that shape:
+If you run many agents behind a queue, promotion can be a task an agent picks up instead of a person:
 
 ```bash
 MEKO_AGENT_ID=orchestrator:retry-demo uv run orchestrator.py
 ```
 
-It searches the private memories, applies a policy in code first (an open question or a decision without a reason is never eligible), lets a model judge what passed the policy, prints a verdict and a reason for each record, and calls `memory_promote` for the approved ids. The call runs under the orchestrator's `agent_id`, so the Observe hub shows which agent promoted what. Promotion still requires owner or maintainer permission on the datapack, so the orchestrator runs with a key that has it. Pass `--rules` to promote on the policy alone with no model call.
+It searches your private memories, applies a rule in code first (an open question, or a decision with no reason, is never eligible), lets a model judge what passed the rule, prints a verdict for each memory, and calls `memory_promote` for the approved ones. It runs under its own agent name, so the trace shows which agent promoted what. Promotion needs an owner or maintainer key on the datapack. Add `--rules` to skip the model and promote on the rule alone.
 
 ## Change the question
 
