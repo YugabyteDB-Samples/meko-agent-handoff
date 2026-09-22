@@ -11,7 +11,7 @@ import uuid
 
 from dotenv import load_dotenv
 
-load_dotenv(os.environ.get("ENV_FILE", ".env.me"), override=True)  # .env.teammate in terminal C
+load_dotenv(os.environ.get("ENV_FILE", ".env"), override=True)  # ENV_FILE=.env.teammate for terminal C
 
 from meko_client import make_meko_mcp_client  # unchanged from the sample repo
 

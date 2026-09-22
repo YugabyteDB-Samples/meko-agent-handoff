@@ -1,10 +1,9 @@
 """Agent 1. Researches a question, then plain Python records what it decided."""
 import json
-
-from strands import Agent
+import os
+from pathlib import Path
 
 from meko import call, log_turn, make_meko_mcp_client, open_trace
-from meko_client import make_model
 
 SYSTEM = (
     "You are a research agent for a Python HTTP client library. Answer the question, "
@@ -12,6 +11,21 @@ SYSTEM = (
     "text, reason, and rejected (an alternative you ruled out, or null)."
 )
 QUESTION = "How should http_client.py retry failed requests?"
+REPLAY_FILE = Path(__file__).with_name("researcher_example.json")
+# researcher_example.json holds three of the ten records a real model run returned
+# on 2026-09-21. With no MODEL_PROVIDER set, the sample replays that answer so a
+# follower needs only a Meko key and datapack id. Set MODEL_PROVIDER to call a model.
+
+
+def ask_model(question: str) -> str:
+    """Return the model's raw answer, or replay a recorded one when no model is configured."""
+    if not os.environ.get("MODEL_PROVIDER", "").strip():
+        return REPLAY_FILE.read_text()
+    from strands import Agent
+    from meko_client import make_model
+
+    agent = Agent(model=make_model(), system_prompt=SYSTEM)  # no Meko tools attached
+    return str(agent(question))
 
 
 def record_decision(client, convo_id: str, d: dict) -> None:
@@ -24,15 +38,16 @@ def record_decision(client, convo_id: str, d: dict) -> None:
 
 
 def main() -> None:
-    agent = Agent(model=make_model(), system_prompt=SYSTEM)  # no Meko tools attached
-    raw = str(agent(QUESTION)).strip().removeprefix("```json").removesuffix("```")
+    raw = ask_model(QUESTION).strip().removeprefix("```json").removesuffix("```")
     findings = json.loads(raw)
+    source = "replayed from researcher_example.json" if not os.environ.get("MODEL_PROVIDER", "").strip() \
+        else os.environ["MODEL_PROVIDER"]
 
     client = make_meko_mcp_client()
     with client:
         convo_id = open_trace(client, "researcher: retry policy")
         log_turn(client, convo_id, "researcher run",
-                 output=f"Question: {QUESTION}\n\nModel answer:\n{raw}",
+                 output=f"Question: {QUESTION}\n\nModel answer ({source}):\n{raw}",
                  reasoning="The model answered; the code below writes every decision so the "
                            "record does not depend on the model choosing to save it.",
                  plan=["Ask the model for decisions, reasons, and rejected alternatives as JSON.",
