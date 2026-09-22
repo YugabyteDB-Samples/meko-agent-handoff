@@ -52,9 +52,13 @@ Every command sets `MEKO_AGENT_ID`, the name the script writes under. It is requ
 
 ## Run it
 
-Start from an empty datapack. Steps 1, 2 and 4 run on your key; steps 3 and 5 run on the teammate's key through `ENV_FILE`.
+A bistro is planning its autumn menu. The chef and the kitchen manager work on your Meko account. The restaurant manager works on a teammate's account and can only see what the kitchen has shared. Five runs take a decision from the chef's head to the printed menu, and the two numbers to watch on every run are the memory count and the Shared Knowledge count.
 
-**1. The chef plans the menu.** The chef settles on three dishes for autumn and leaves one question open, then writes each one down. The model does the deciding; plain Python does the writing, one `memory_add` per finding, so the notes exist whether or not the model thought to save them.
+Start from an empty datapack. Runs 1, 2 and 4 use your key; runs 3 and 5 use the teammate's key through `ENV_FILE`.
+
+### 1. The chef plans the menu
+
+The chef settles on three dishes and leaves one question open, then writes each one down. The model does the deciding and plain Python does the writing, one `memory_add` per finding, so the record exists whether or not the model thought to save it. You should see four `recorded:` lines.
 
 ```bash
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py
@@ -68,9 +72,11 @@ recorded: DECISION: Pear and almond tart as the dessert on the autumn menu. REAS
 recorded: OPEN_QUESTION: Should the roast chicken stay on the autumn menu, or come off to 
 ```
 
-With no model configured the answer is the example in `chef_example.json`, so these four lines are the same every time.
+With no model configured the answer comes from `chef_example.json`, so these four lines are the same every time.
 
-**2. The kitchen manager reads the menu and writes the shopping list.** A new process starts with nothing in its head, on the same account as the chef. It finds the chef's four notes, keeps the three decided dishes, works out what each needs, and leaves a note of its own for each one.
+### 2. The kitchen manager reads the menu and writes the shopping list
+
+A new process starts with nothing in its head, on the same account as the chef. It searches memory and Shared Knowledge, finds the chef's four notes in memory and nothing shared, keeps the three decided dishes, and leaves a shopping note of its own for each. You should see four rows tagged with the chef's name, then three `recorded:` lines under the kitchen manager's.
 
 ```bash
 MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py
@@ -101,9 +107,11 @@ recorded: INGREDIENTS: Pear and almond tart as the dessert on the autumn menu. N
 - vegetable stock (for: Roasted squash soup as the starter on the autumn menu)
 ```
 
-Memory is per account, and the label on each row says who wrote it. The search ranks by relevance, so the four rows can come back in a different order.
+Memory belongs to the account, so a second agent reads the first one's notes, and each row still says who wrote it. Search ranks by relevance, so the four rows may come back in a different order.
 
-**3. The restaurant manager asks if the menu is ready.** Front of house runs on a teammate's account. It looks in its own memory and in Shared Knowledge and finds nothing, because nothing has left the kitchen yet. It says so and stops instead of making up a menu.
+### 3. The restaurant manager asks if the menu is ready
+
+Now switch accounts. Front of house runs on the teammate's key, with the same two searches. Nothing has left the kitchen, so both come back empty, and rather than make up a menu the script says the menu is not ready and stops. You should see zero and zero.
 
 ```bash
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
@@ -117,9 +125,11 @@ shared knowledge: 0 results
 The menu is not ready yet. Nothing has been shared with the team.
 ```
 
-Nothing has been promoted, so the other account sees nothing and the script stops rather than guess.
+Seven records exist on this datapack and the teammate's account can see none of them. That is the isolation the rest of the demo is about.
 
-**4. The chef shares the decided dishes.** The chef goes back over everything in memory and applies one rule: a decided dish with a reason goes on the menu, an open question stays private, and the kitchen's shopping notes are not the team's business. The three dishes move to Shared Knowledge.
+### 4. The chef shares the decided dishes
+
+Back on your key. The chef goes over everything in memory and applies one rule: a decided dish with a reason goes on the menu, an open question stays private, and the kitchen's shopping notes are not the team's business. The three dishes move to Shared Knowledge. You should see a verdict for each of the seven records, then three ids.
 
 ```bash
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote
@@ -144,9 +154,11 @@ KEEP    INGREDIENTS: Pear and almond tart as the dessert on the autumn menu. N
 {'inserted_ids': ['b68312c8-...', 'b6e38db7-...', 'c41d9a02-...'], 'updated_ids': [], 'not_found_ids': []}
 ```
 
-The rule is `allowed_by_policy()` in `chef.py`, and it runs under `chef:menu-demo`, so the trace shows which agent shared what.
+The rule is `allowed_by_policy()` in `chef.py`. It is code, so it runs the same way every time, and it runs under `chef:menu-demo`, so the trace shows which agent shared what.
 
-**5. The restaurant manager asks again and prints the menu.** Same account, same command as step 3. This time Shared Knowledge has the three dishes, each still marked as the chef's, and the menu goes up. The open question and the shopping list never left the kitchen.
+### 5. The restaurant manager asks again and prints the menu
+
+Same account and same command as run 3. This time Shared Knowledge holds the three dishes, each still marked as the chef's, and the menu goes up. You should see zero in memory, three in Shared Knowledge, and the menu.
 
 ```bash
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
@@ -172,9 +184,11 @@ shared knowledge: 3 results
   Decided by: chef:menu-demo (Shared Knowledge)
 ```
 
-The open question and the ingredients are not there; they were never shared.
+The open question and the shopping list are not on the menu. They never left the kitchen.
 
-Each run prints a trace id. Open it in the Observe hub for the datapack at cloud.mekodata.ai to see the run call by call: the question, the answer, the reasoning, each search and its results, each memory written. The trace from step 3, with both searches empty and a timestamp, is the one to keep.
+### Read the traces
+
+Every run printed a trace id. Open one in the Observe hub for the datapack at cloud.mekodata.ai and the run is laid out call by call: the question, the answer, the reasoning, each search and what it returned, each memory written. The trace from run 3, two empty searches with a timestamp, is the one to keep. It proves the teammate's agent did not have the decision, rather than asserting it.
 
 ## What it demonstrates
 
