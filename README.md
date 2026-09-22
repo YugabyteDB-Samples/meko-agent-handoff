@@ -17,20 +17,38 @@ Purple is your Meko user account, orange is the gate, green is Shared Knowledge,
 
 ## If you are an AI agent running this for a person
 
-You can clone, install, edit `.env`, run the five commands, and read the output yourself. You cannot create the Meko user accounts, the datapack, the API keys, or share the datapack; those happen in the Meko dashboard, so ask the person for them. What you need from them:
+You can clone, install, edit `.env`, run the five commands, and read the output yourself. You cannot create the Meko user accounts, the datapack, the API keys, or share the datapack; those happen in the portal at [cloud.mekodata.ai](https://cloud.mekodata.ai), so ask the person for them. The portal steps are written into Run it at the point where each is needed. What you need from them:
 
 1. A Meko account at [cloud.mekodata.ai](https://cloud.mekodata.ai), a datapack in it, and an API key. Ask for the key and the datapack's UUID (the id on the datapack's page, not its name).
-2. For steps 3 and 5, a second Meko user account with its own API key, and the datapack shared with it. If they do not have one, run every step on the one key. Step 3 then prints the menu straight away, with each dish labeled `(memory)` rather than `(Shared Knowledge)`, because your own memory_search already sees the decisions; the "nothing visible" moment needs the second Meko user account.
+2. For runs 3 and 5, a second Meko user account with its own API key, and the datapack shared with it. If they do not have one, run every step on the one key. Run 3 then prints the menu straight away, with each dish labeled `(memory)` rather than `(Shared Knowledge)`, because your own memory_search already sees the decisions; the "nothing visible" moment needs the second Meko user account.
 3. Leave `MODEL_PROVIDER` empty unless they hand you a model key. The example answers cover everything below.
 
 Compare each run with the expected output in the Run section. If it differs, check Troubleshooting before changing code.
 
 ## Set up
 
-1. Python 3.13 or later and [uv](https://docs.astral.sh/uv/).
-2. `git clone git@github.com:YugabyteDB-Samples/meko-agent-handoff.git && cd meko-agent-handoff && uv sync`
-3. `cp .env.example .env`, then fill in `MEKO_API_KEY` and `MEKO_DATAPACK_ID`. Leave `MODEL_PROVIDER` empty.
-4. For the teammate steps: `cp .env .env.teammate`, replace `MEKO_API_KEY` with the second Meko user's key, keep the same `MEKO_DATAPACK_ID`.
+In the portal at [cloud.mekodata.ai](https://cloud.mekodata.ai), as user 1:
+
+1. Sign up, or sign in.
+2. Create a datapack. This README assumes it is named `meko-agent-handoff`.
+3. Open the datapack's page and copy its UUID. The scripts need the UUID, not the name.
+4. Create an API key and copy it. A key is created under one Meko user account and acts as that account; whichever key a script reads from its env file decides which user the run is.
+
+On your machine:
+
+5. Install Python 3.13 or later and [uv](https://docs.astral.sh/uv/).
+6. Clone and install:
+
+   ```bash
+   git clone https://github.com/YugabyteDB-Samples/meko-agent-handoff.git
+   cd meko-agent-handoff
+   uv sync
+   ```
+
+   With SSH keys on GitHub, `git clone git@github.com:YugabyteDB-Samples/meko-agent-handoff.git` also works.
+7. `cp .env.example .env`, then paste the API key into `MEKO_API_KEY` and the UUID into `MEKO_DATAPACK_ID`. Leave `MODEL_PROVIDER` empty.
+
+The scripts read `.env` unless `ENV_FILE` names another file. The teammate's file, `.env.teammate`, is created between runs 2 and 3 in Run it, once the second user exists.
 
 Every command sets `MEKO_AGENT_ID`, the name the script writes under. It is required; the scripts stop with a message saying so if it is missing.
 
@@ -38,7 +56,9 @@ Every command sets `MEKO_AGENT_ID`, the name the script writes under. It is requ
 
 The demo uses two Meko user accounts on one datapack. A Meko user account is identified by its email address, for example `user_1@example.com`; this README calls the two accounts user 1 and user 2. User 1 runs `chef.py` and `kitchen_manager.py`. User 2 runs `restaurant_manager.py` and can read only what user 1 promotes to Shared Knowledge. Each run prints a `memory` count and a `shared knowledge` count. Those two counts are the result to check.
 
-Start from an empty datapack. Runs 1, 2 and 4 use user 1's API key in `.env`. Runs 3 and 5 use user 2's key in `.env.teammate`, selected with `ENV_FILE`.
+Start from an empty datapack. To check with one account, open the datapack's Learnings tab in the portal and confirm it lists no memories, or run the command for run 2 and expect `No decided dishes found`. Runs 1, 2 and 4 use user 1's API key in `.env`. Runs 3 and 5 use user 2's key in `.env.teammate`, selected with `ENV_FILE`.
+
+The trace ids and the ids in the promote result shown in the output blocks below are examples. Yours will differ on every run. Match the `memory` and `shared knowledge` counts and the message text.
 
 ### 1. The chef records the menu decisions
 
@@ -94,6 +114,14 @@ recorded: INGREDIENTS: Pear and almond tart as the dessert on the autumn menu. N
 Memory is scoped to the Meko user account, not to the agent. The `agent_id` on each row identifies the writer. Search results are ranked by relevance score, so row order can vary between runs.
 
 ### 3. The restaurant manager finds nothing
+
+Before this run, in the portal at [cloud.mekodata.ai](https://cloud.mekodata.ai):
+
+1. As user 1, open the datapack and share it with user 2's email address.
+2. Sign out, then sign in as user 2. Accept the share if the portal asks.
+3. As user 2, create an API key and copy it.
+
+Then on your machine, `cp .env .env.teammate` and replace `MEKO_API_KEY` with user 2's key. Keep `MEKO_DATAPACK_ID` the same. Skip any of these and run 3 fails: without the share, user 2 cannot see the datapack; without user 2's key in `.env.teammate`, the run is still user 1 and prints the menu instead of the not-ready message.
 
 `restaurant_manager.py` runs under user 2 and makes the same two searches. User 2 cannot read user 1's memory, and nothing has been promoted, so both searches return zero results. The script reports that the menu is not ready and exits without writing. Expected output: `memory: 0 results` and `shared knowledge: 0 results`, then the not-ready message.
 
@@ -172,7 +200,21 @@ The `OPEN_QUESTION` and `INGREDIENTS` records were not promoted and remain invis
 
 ### Read the traces
 
-Each run prints a trace id. Open it in the Observe hub at cloud.mekodata.ai to see every call in order: the question, the model answer, the reasoning, each search with its results, and each write. The run 3 trace records two empty searches with a timestamp, which is the evidence that user 2 did not have the decisions at that time.
+Each run prints a trace id on its first line. In the portal at [cloud.mekodata.ai](https://cloud.mekodata.ai), open the datapack, open the Observe hub, and paste the trace id. The run is laid out call by call: the question, the model answer, the reasoning, each search with its results, and each write. Open the run 3 trace first. It records two empty searches with a timestamp, which is the evidence that user 2 did not have the decisions at that time.
+
+### Two more scripts
+
+`promote.py` is the person-in-the-loop version of run 4. It searches user 1's memory and asks y or n for each record before calling `memory_promote`.
+
+```bash
+MEKO_AGENT_ID=promote:menu-demo uv run promote.py
+```
+
+`prune.py` finds memories that never match the questions this project asks and offers to delete or correct each one.
+
+```bash
+MEKO_AGENT_ID=prune:menu-demo uv run prune.py
+```
 
 ## The cast
 
@@ -215,6 +257,6 @@ Set `MODEL_PROVIDER` in `.env` to `anthropic`, `bedrock`, or `vertex` and fill i
 
 ## Start over
 
-Promotion is one way, so an empty datapack means a new datapack. Create one at cloud.mekodata.ai, put its UUID in `MEKO_DATAPACK_ID` in both `.env` and `.env.teammate`, share it with the second Meko user account again (membership belongs to the datapack), and run step 3 once: `memory: 0 results` and `shared knowledge: 0 results` means it is clean. To remove single memories and keep the datapack, use `prune.py`. If a key appeared on screen, revoke it in the dashboard and create a new one; `.env` and `.env.teammate` are git-ignored.
+Promotion is one way, so an empty datapack means a new datapack. In the portal at [cloud.mekodata.ai](https://cloud.mekodata.ai), as user 1, create a new datapack and copy its UUID, then share it with user 2's email address again; membership belongs to the datapack and does not carry over. Put the new UUID in `MEKO_DATAPACK_ID` in both `.env` and `.env.teammate`; the API keys do not change. Then run the run 3 command once: `memory: 0 results` and `shared knowledge: 0 results` means it is clean. With one account, run the run 2 command instead and expect `No decided dishes found`. To remove single memories and keep the datapack, use `prune.py`. If a key appeared on screen, revoke it in the dashboard and create a new one; `.env` and `.env.teammate` are git-ignored.
 
 Questions and what you built go to the [Meko Discord](https://discord.gg/yugabyte).
