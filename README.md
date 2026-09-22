@@ -95,7 +95,7 @@ Memory is scoped to the Meko user account, not to the agent. The `agent_id` on e
 
 ### 3. The restaurant manager finds nothing
 
-`restaurant_manager.py` runs under user 2 and makes the same two searches. user 2 cannot read user 1's memory, and nothing has been promoted, so both searches return zero results. The script reports that the menu is not ready and exits without writing. Expected output: `memory: 0 results` and `shared knowledge: 0 results`, then the not-ready message.
+`restaurant_manager.py` runs under user 2 and makes the same two searches. User 2 cannot read user 1's memory, and nothing has been promoted, so both searches return zero results. The script reports that the menu is not ready and exits without writing. Expected output: `memory: 0 results` and `shared knowledge: 0 results`, then the not-ready message.
 
 ```bash
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
