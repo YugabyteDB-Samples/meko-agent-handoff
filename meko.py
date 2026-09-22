@@ -18,7 +18,7 @@ load_dotenv(os.environ.get("ENV_FILE", ".env"), override=True)
 from meko_client import make_meko_mcp_client
 
 DATAPACK_ID = os.environ.get("MEKO_DATAPACK_ID", "").strip()
-AGENT_ID = os.environ["MEKO_AGENT_ID"]  # the name this script saves under, e.g. researcher:retry-demo
+AGENT_ID = os.environ["MEKO_AGENT_ID"]  # the name this script saves under, e.g. chef:menu-demo
 
 try:
     uuid.UUID(DATAPACK_ID)

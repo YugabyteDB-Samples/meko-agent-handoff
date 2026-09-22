@@ -1,7 +1,7 @@
 [project]
 name = "meko-agent-handoff"
 version = "0.1.0"
-description = "Two Strands agents sharing decisions through Meko: one records, one recalls, a person promotes, every call is traced."
+description = "Three small agents sharing a menu through Meko: a chef records, a kitchen manager recalls, a restaurant manager promotes by policy, every call is traced."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.13"

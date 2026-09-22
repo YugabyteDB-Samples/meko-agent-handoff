@@ -1,4 +1,4 @@
-"""Agent 1. Researches a question, then plain Python records what it decided."""
+"""Agent 1, the chef. Plans the menu, then plain Python records what was decided."""
 import json
 import os
 from pathlib import Path
@@ -6,17 +6,19 @@ from pathlib import Path
 from meko import call, log_turn, make_meko_mcp_client, open_trace
 
 SYSTEM = (
-    "You are a research agent for a Python HTTP client library. Answer the question with "
-    "exactly three findings: the two decisions that matter most, then one question you "
-    "could not settle. Return ONLY a JSON list of three items. Each item has: kind "
-    "('decision' or 'open_question'), text, reason, and rejected (an alternative you "
-    "ruled out, or null)."
+    "You are the head chef of a small neighborhood bistro planning next season's menu. "
+    "Answer the question with exactly four findings: the three dishes you decided to add, "
+    "then one question you could not settle. Return ONLY a JSON list of four items. Each "
+    "item has: kind ('decision' or 'open_question'), text (the dish and its place on the "
+    "menu, or the question), ingredients (a list of at most five things to buy, or null "
+    "for a question), reason, and rejected (an alternative you ruled out, or null)."
 )
-QUESTION = "How should http_client.py retry failed requests?"
-MAX_FINDINGS = 3  # the code holds the line even if the model does not
-# A recorded model answer to QUESTION. With no MODEL_PROVIDER set, the researcher
-# replays it instead of calling a model, so all you need is a Meko key.
-REPLAY_FILE = Path(__file__).with_name("researcher_example.json")
+QUESTION = "What should we add to the autumn menu?"
+MAX_FINDINGS = 4  # three dishes and one open question; the code holds the line even if the model does not
+
+# A recorded model answer to QUESTION. With no MODEL_PROVIDER set, the chef replays it
+# instead of calling a model, so all you need is a Meko key.
+REPLAY_FILE = Path(__file__).with_name("chef_example.json")
 
 
 def ask_model(question: str) -> str:
@@ -41,7 +43,10 @@ def parse_findings(raw: str) -> list[dict]:
 
 def record_decision(client, convo_id: str, d: dict) -> None:
     """Turn one finding into a single line of text and store it as written."""
-    text = f"{d['kind'].upper()}: {d['text']} REASON: {d['reason']}"
+    text = f"{d['kind'].upper()}: {d['text']}"
+    if d.get("ingredients"):
+        text += f" INGREDIENTS: {', '.join(d['ingredients'])}"
+    text += f" REASON: {d['reason']}"
     if d.get("rejected"):
         text += f" REJECTED: {d['rejected']}"
     call(client, "memory_add", conversation_id=convo_id, text=text)
@@ -51,17 +56,17 @@ def record_decision(client, convo_id: str, d: dict) -> None:
 def main() -> None:
     raw = ask_model(QUESTION)
     findings = parse_findings(raw)[:MAX_FINDINGS]
-    source = "replayed from researcher_example.json" if not os.environ.get("MODEL_PROVIDER", "").strip() \
+    source = "replayed from chef_example.json" if not os.environ.get("MODEL_PROVIDER", "").strip() \
         else os.environ["MODEL_PROVIDER"]
 
     client = make_meko_mcp_client()
     with client:
-        convo_id = open_trace(client, "researcher: retry policy")
-        log_turn(client, convo_id, "researcher run",
+        convo_id = open_trace(client, "chef: autumn menu")
+        log_turn(client, convo_id, "chef run",
                  output=f"Question: {QUESTION}\n\nModel answer ({source}):\n{raw}",
                  reasoning=f"The model answered; the code below writes the first {MAX_FINDINGS} "
                            "findings so the record does not depend on the model choosing to save it.",
-                 plan=["Ask the model for decisions, reasons, and rejected alternatives as JSON.",
+                 plan=["Ask the model for dishes, their ingredients, reasons, and rejected alternatives as JSON.",
                        "Write each one to memory with memory_add so the wording is kept.",
                        "Leave open questions private until someone settles them."])
         for d in findings:

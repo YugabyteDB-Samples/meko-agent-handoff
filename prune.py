@@ -7,15 +7,15 @@ deleted without a y, and a superseded decision can be corrected instead.
 from meko import call, make_meko_mcp_client, open_trace
 
 QUESTIONS = [
-    "http_client.py retry behavior: backoff, which status codes to retry, and Retry-After handling",
-    "which HTTP status codes should be retried",
-    "how long to wait between retries",
+    "autumn menu: the dishes decided for the starter, main, and dessert, the ingredients to buy for each, and what is still undecided",
+    "which dishes are on the autumn menu",
+    "what does the kitchen need to buy",
 ]
 FLOOR = 0.6  # raw cosine similarity; tune it against your own datapack
 
 client = make_meko_mcp_client()
 with client:
-    convo_id = open_trace(client, "prune: retry policy")
+    convo_id = open_trace(client, "prune: autumn menu")
 
     seen: dict[str, dict] = {}
     best: dict[str, float] = {}
