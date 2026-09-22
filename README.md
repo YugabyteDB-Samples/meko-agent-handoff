@@ -2,7 +2,7 @@
 
 Three small Python scripts that show how agents share what they learn through [Meko](https://cloud.mekodata.ai), over MCP. One records decisions. One reads them back in a new process. One runs on a second account and gets nothing until a rule in code shares them. Every read and write lands in a trace.
 
-No model key is needed. The scripts replay recorded model answers, so a free Meko account is enough to run all five steps.
+No model key is needed. In place of a model, the scripts use example answers stored in JSON files, so a free Meko account is enough to run all five steps.
 
 This is the code from the webinar "Shared Memory for AI Coding Agents: A Live Build with Meko".
 
@@ -37,7 +37,7 @@ You can clone, install, edit `.env`, run the five commands, and read the output 
 
 1. A Meko account at [cloud.mekodata.ai](https://cloud.mekodata.ai), a datapack in it, and an API key. Ask for the key and the datapack's UUID (the id on the datapack's page, not its name).
 2. For steps 3 and 5, a second Meko account with its own API key, and the datapack shared with it. If they do not have one, run every step on the one key. Step 3 then prints the menu straight away, with each dish labeled `(memory)` rather than `(Shared Knowledge)`, because your own memory_search already sees the decisions; the "nothing visible" moment needs the second account.
-3. Leave `MODEL_PROVIDER` empty unless they hand you a model key. The recordings cover everything below.
+3. Leave `MODEL_PROVIDER` empty unless they hand you a model key. The example answers cover everything below.
 
 Compare each run with the expected output in the Run section. If it differs, check Troubleshooting before changing code.
 
@@ -86,9 +86,9 @@ Each run prints a trace id. Open it in the Observe hub for the datapack at cloud
 
 **Every call is traced.** `meko.py` routes each call through one function that attaches the datapack, the agent_id, and the trace id.
 
-## Use a model instead of the recordings
+## Use a model instead of the example answers
 
-Set `MODEL_PROVIDER` in `.env` to `anthropic`, `bedrock`, or `vertex` and fill in that provider's lines; `.env.example` lists them (an API key for Anthropic, a Bedrock API key and region, Application Default Credentials and a project for Gemini Enterprise Agent Platform, formerly Vertex AI). Then change `QUESTION` in `chef.py` to a decision from your own project and `QUERY` in all three scripts to describe what to recall. With no model, `chef.py` replays `chef_example.json` whatever `QUESTION` says, and `kitchen_manager.py` only knows the dishes in `kitchen_manager_example.json`.
+Set `MODEL_PROVIDER` in `.env` to `anthropic`, `bedrock`, or `vertex` and fill in that provider's lines; `.env.example` lists them (an API key for Anthropic, a Bedrock API key and region, Application Default Credentials and a project for Gemini Enterprise Agent Platform, formerly Vertex AI). Then change `QUESTION` in `chef.py` to a decision from your own project and `QUERY` in all three scripts to describe what to recall. With no model, `chef.py` uses the example answer in `chef_example.json` whatever `QUESTION` says, and `kitchen_manager.py` only knows the dishes in `kitchen_manager_example.json`.
 
 `context_search` searches both scopes in one call; this repo uses the two direct calls because, when we tested it, `context_search` returned nothing for promoted memories that `knowledgebase_search` found.
 
@@ -105,4 +105,4 @@ Set `MODEL_PROVIDER` in `.env` to `anthropic`, `bedrock`, or `vertex` and fill i
 
 Promotion is one way, so an empty datapack means a new datapack. Create one at cloud.mekodata.ai, put its UUID in `MEKO_DATAPACK_ID` in both `.env` and `.env.teammate`, share it with the second account again (membership belongs to the datapack), and run step 3 once: zero and zero means it is clean. To remove single memories and keep the datapack, use `prune.py`. If a key appeared on screen, revoke it in the dashboard and create a new one; `.env` and `.env.teammate` are git-ignored.
 
-Questions and what you built go to the Meko Discord.
+Questions and what you built go to the [Meko Discord](https://discord.gg/yugabyte).
