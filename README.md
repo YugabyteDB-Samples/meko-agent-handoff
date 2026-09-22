@@ -60,7 +60,15 @@ Start from an empty datapack. Steps 1, 2 and 4 run on your key; steps 3 and 5 ru
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py
 ```
 
-Expect a `trace:` id, then four `recorded:` lines: three `DECISION:` and one `OPEN_QUESTION:`. With no model configured the answer is the example in `chef_example.json`, so the four lines are the same every time.
+```text
+trace: 1f9c2d4e6b8a4c0e9d3b7a5f2e1c8b6d
+recorded: DECISION: Roasted squash soup as the starter on the autumn menu. REASON: Squash 
+recorded: DECISION: Mushroom and leek pie as the vegetarian main on the autumn menu. REASO
+recorded: DECISION: Pear and almond tart as the dessert on the autumn menu. REASON: Pears 
+recorded: OPEN_QUESTION: Should the roast chicken stay on the autumn menu, or come off to 
+```
+
+With no model configured the answer is the example in `chef_example.json`, so these four lines are the same every time.
 
 **2. The kitchen manager reads the menu and writes the shopping list.** A new process starts with nothing in its head, on the same account as the chef. It finds the chef's four notes, keeps the three decided dishes, works out what each needs, and leaves a note of its own for each one.
 
@@ -68,7 +76,32 @@ Expect a `trace:` id, then four `recorded:` lines: three `DECISION:` and one `OP
 MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py
 ```
 
-Expect `memory: 4 results`, each tagged `[chef:menu-demo]`, and `shared knowledge: 0 results`. Then three `recorded: INGREDIENTS:` lines under the kitchen manager's own agent_id and a `# To buy` list. Memory is per account, and the labels say who wrote what.
+```text
+trace: 3a7e5c1b9d2f4a6c8e0b1d3f5a7c9e2b
+memory: 4 results
+  [chef:menu-demo] DECISION: Roasted squash soup as the starter on the autumn menu. REASON: Squash is at its 
+  [chef:menu-demo] OPEN_QUESTION: Should the roast chicken stay on the autumn menu, or come off to make room 
+  [chef:menu-demo] DECISION: Pear and almond tart as the dessert on the autumn menu. REASON: Pears arrive in 
+  [chef:menu-demo] DECISION: Mushroom and leek pie as the vegetarian main on the autumn menu. REASON: The kit
+shared knowledge: 0 results
+recorded: INGREDIENTS: Roasted squash soup as the starter on the autumn menu. NEEDS: butte
+recorded: INGREDIENTS: Mushroom and leek pie as the vegetarian main on the autumn menu. NE
+recorded: INGREDIENTS: Pear and almond tart as the dessert on the autumn menu. NEEDS: pear
+
+# To buy for the autumn menu
+
+- butter (for: Pear and almond tart as the dessert on the autumn menu)
+- butternut squash (for: Roasted squash soup as the starter on the autumn menu)
+- ground almonds (for: Pear and almond tart as the dessert on the autumn menu)
+- leeks (for: Mushroom and leek pie as the vegetarian main on the autumn menu)
+- mushrooms (for: Mushroom and leek pie as the vegetarian main on the autumn menu)
+- onion (for: Roasted squash soup as the starter on the autumn menu)
+- pears (for: Pear and almond tart as the dessert on the autumn menu)
+- puff pastry (for: Mushroom and leek pie as the vegetarian main on the autumn menu)
+- vegetable stock (for: Roasted squash soup as the starter on the autumn menu)
+```
+
+Memory is per account, and the label on each row says who wrote it. The search ranks by relevance, so the four rows can come back in a different order.
 
 **3. The restaurant manager asks if the menu is ready.** Front of house runs on a teammate's account. It looks in its own memory and in Shared Knowledge and finds nothing, because nothing has left the kitchen yet. It says so and stops instead of making up a menu.
 
@@ -76,7 +109,15 @@ Expect `memory: 4 results`, each tagged `[chef:menu-demo]`, and `shared knowledg
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
 ```
 
-Expect `memory: 0 results`, `shared knowledge: 0 results`, and `The menu is not ready yet. Nothing has been shared with the team.`
+```text
+trace: 8512e829a5a2471b98dca7b66312ce64
+memory: 0 results
+shared knowledge: 0 results
+
+The menu is not ready yet. Nothing has been shared with the team.
+```
+
+Nothing has been promoted, so the other account sees nothing and the script stops rather than guess.
 
 **4. The chef shares the decided dishes.** The chef goes back over everything in memory and applies one rule: a decided dish with a reason goes on the menu, an open question stays private, and the kitchen's shopping notes are not the team's business. The three dishes move to Shared Knowledge.
 
@@ -84,7 +125,26 @@ Expect `memory: 0 results`, `shared knowledge: 0 results`, and `The menu is not 
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote
 ```
 
-Expect a verdict for every private record: `PROMOTE` for the three dishes, `KEEP` for the open question and the ingredient notes, each with its reason. Then the `memory_promote` result with three ids. The rule is `allowed_by_policy()` in `chef.py`, and it runs under `chef:menu-demo`, so the trace shows which agent shared what.
+```text
+trace: 5c76bfe78e0d400686e9e2080cdb2b9a
+PROMOTE DECISION: Roasted squash soup as the starter on the autumn menu. REASO
+         decided, with a reason
+KEEP    OPEN_QUESTION: Should the roast chicken stay on the autumn menu, or co
+         open questions stay private until settled
+PROMOTE DECISION: Pear and almond tart as the dessert on the autumn menu. REAS
+         decided, with a reason
+PROMOTE DECISION: Mushroom and leek pie as the vegetarian main on the autumn m
+         decided, with a reason
+KEEP    INGREDIENTS: Roasted squash soup as the starter on the autumn menu. NE
+         only decided dishes go on the menu
+KEEP    INGREDIENTS: Mushroom and leek pie as the vegetarian main on the autum
+         only decided dishes go on the menu
+KEEP    INGREDIENTS: Pear and almond tart as the dessert on the autumn menu. N
+         only decided dishes go on the menu
+{'inserted_ids': ['b68312c8-...', 'b6e38db7-...', 'c41d9a02-...'], 'updated_ids': [], 'not_found_ids': []}
+```
+
+The rule is `allowed_by_policy()` in `chef.py`, and it runs under `chef:menu-demo`, so the trace shows which agent shared what.
 
 **5. The restaurant manager asks again and prints the menu.** Same account, same command as step 3. This time Shared Knowledge has the three dishes, each still marked as the chef's, and the menu goes up. The open question and the shopping list never left the kitchen.
 
@@ -92,7 +152,27 @@ Expect a verdict for every private record: `PROMOTE` for the three dishes, `KEEP
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
 ```
 
-Expect `memory: 0 results`, `shared knowledge: 3 results`, each tagged `[chef:menu-demo]`, then the menu with `Decided by: chef:menu-demo (Shared Knowledge)` under each dish.
+```text
+trace: 0e83b3330120469d8a9aa44ed88670cf
+memory: 0 results
+shared knowledge: 3 results
+  [chef:menu-demo] DECISION: Roasted squash soup as the starter on the autumn menu. REASON: Squash is at its 
+  [chef:menu-demo] DECISION: Pear and almond tart as the dessert on the autumn menu. REASON: Pears arrive in 
+  [chef:menu-demo] DECISION: Mushroom and leek pie as the vegetarian main on the autumn menu. REASON: The kit
+
+# Autumn menu
+
+3 dishes decided by the kitchen.
+
+- Roasted squash soup as the starter on the autumn menu.
+  Decided by: chef:menu-demo (Shared Knowledge)
+- Mushroom and leek pie as the vegetarian main on the autumn menu.
+  Decided by: chef:menu-demo (Shared Knowledge)
+- Pear and almond tart as the dessert on the autumn menu.
+  Decided by: chef:menu-demo (Shared Knowledge)
+```
+
+The open question and the ingredients are not there; they were never shared.
 
 Each run prints a trace id. Open it in the Observe hub for the datapack at cloud.mekodata.ai to see the run call by call: the question, the answer, the reasoning, each search and its results, each memory written. The trace from step 3, with both searches empty and a timestamp, is the one to keep.
 
