@@ -67,8 +67,9 @@ def main() -> None:
     with client:
         convo_id = open_trace(client, "kitchen-manager: what each dish needs")
         records = recall(client, convo_id)
-        dishes = [parse_record(r["text"]) for r in records]
-        dishes = [d for d in dishes if d["kind"] == "DECISION"]
+        parsed = [parse_record(r["text"]) for r in records]
+        dishes = list({d["text"]: d for d in parsed if d["kind"] == "DECISION"}.values())  # one per dish
+        already_noted = {d["text"].partition(" NEEDS: ")[0] for d in parsed if d["kind"] == "INGREDIENTS"}
 
         if not dishes:
             log_turn(client, convo_id, "kitchen-manager run", output="Stopped: no decided dishes found.",
@@ -80,6 +81,9 @@ def main() -> None:
 
         notes, to_buy = [], {}
         for d in dishes:
+            if d["text"] in already_noted:
+                print(f"already noted: {d['text'][:60]}")
+                continue
             ingredients = ingredients_for(d["text"])
             if not ingredients:
                 print(f"skipped: no example ingredients for {d['text']!r}; set MODEL_PROVIDER to work them out")
