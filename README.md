@@ -68,7 +68,8 @@ The trace ids and the ids in the promote result shown in the output blocks below
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py
 ```
 
-```text
+```console
+$ MEKO_AGENT_ID=chef:menu-demo uv run chef.py
 trace: 1f9c2d4e6b8a4c0e9d3b7a5f2e1c8b6d
 recorded: DECISION: Roasted squash soup as the starter on the autumn menu. REASON: Squash 
 recorded: DECISION: Mushroom and leek pie as the vegetarian main on the autumn menu. REASO
@@ -86,7 +87,8 @@ With `MODEL_PROVIDER` empty, the answer comes from `chef_example.json`, so the f
 MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py
 ```
 
-```text
+```console
+$ MEKO_AGENT_ID=kitchen-manager:menu-demo uv run kitchen_manager.py
 trace: 3a7e5c1b9d2f4a6c8e0b1d3f5a7c9e2b
 memory: 4 results
   [chef:menu-demo] DECISION: Roasted squash soup as the starter on the autumn menu. REASON: Squash is at its 
@@ -129,7 +131,8 @@ Then on your machine, `cp .env .env.teammate` and replace `MEKO_API_KEY` with us
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
 ```
 
-```text
+```console
+$ ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
 trace: 8512e829a5a2471b98dca7b66312ce64
 memory: 0 results
 shared knowledge: 0 results
@@ -147,7 +150,8 @@ Seven records exist on the datapack. None is visible to user 2.
 MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote
 ```
 
-```text
+```console
+$ MEKO_AGENT_ID=chef:menu-demo uv run chef.py --promote
 trace: 5c76bfe78e0d400686e9e2080cdb2b9a
 PROMOTE DECISION: Roasted squash soup as the starter on the autumn menu. REASO
          decided, with a reason
@@ -176,7 +180,8 @@ Same command and account as run 3. `knowledgebase_search` now returns the three 
 ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
 ```
 
-```text
+```console
+$ ENV_FILE=.env.teammate MEKO_AGENT_ID=restaurant-manager:menu-demo uv run restaurant_manager.py
 trace: 0e83b3330120469d8a9aa44ed88670cf
 memory: 0 results
 shared knowledge: 3 results
