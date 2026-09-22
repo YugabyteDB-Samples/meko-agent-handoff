@@ -15,15 +15,15 @@ This is the code from the webinar "Shared Memory for AI Coding Agents: A Live Bu
 
 Purple is your Meko user account, orange is the gate, green is Shared Knowledge, gray is the teammate. Step 3 runs before the gate, so the empty result proves the isolation; step 5 is the same command after it.
 
-## If you are an AI agent running this for a person
+## What it demonstrates
 
-You can clone, install, edit `.env`, run the five commands, and read the output yourself. You cannot create the Meko user accounts, the datapack, the API keys, or share the datapack; those happen in the portal at [cloud.mekodata.ai](https://cloud.mekodata.ai), so ask the person for them. The portal steps are written into Run it at the point where each is needed. What you need from them:
+**The code decides what is persisted.** Meko has two ways to write. `conversation_add_message` stores a turn in the trace and extracts memories from its input side only; the extractor rewrites what it reads and may keep nothing. `memory_add` stores your text as one memory, as written. The decisions live in the model's answer, so `record_decision()` writes them with `memory_add`; the model never touches Meko. The scripts still post each run to the trace with `conversation_add_message`, with a short label in `input` and the question in `output`, because a question in `input` becomes a memory of its own and outranks the real decisions in search.
 
-1. A Meko account at [cloud.mekodata.ai](https://cloud.mekodata.ai), a datapack in it, and an API key. Ask for the key and the datapack's UUID (the id on the datapack's page, not its name).
-2. For runs 3 and 5, a second Meko user account with its own API key, and the datapack shared with it. If they do not have one, run every step on the one key. Run 3 then prints the menu straight away, with each dish labeled `(memory)` rather than `(Shared Knowledge)`, because your own memory_search already sees the decisions; the "nothing visible" moment needs the second Meko user account.
-3. Leave `MODEL_PROVIDER` empty unless they hand you a model key. The example answers cover everything below.
+**Memory is per Meko user account, labeled by agent.** Step 2 reads step 1's records because both run in Meko user 1's account; the agent_id on each row is a label, not a wall. Step 3 reads nothing because it runs in Meko user 2's account.
 
-Compare each run with the expected output in the Run section. If it differs, check Troubleshooting before changing code.
+**Promotion is the gate, and it can be code.** Nothing becomes team knowledge until something promotes it: a rule in `chef.py --promote`, a person in `promote.py`, or a click in the Learnings tab. It goes one way.
+
+**Every call is traced.** `meko.py` routes each call through one function that attaches the datapack, the agent_id, and the trace id.
 
 ## Set up
 
@@ -248,15 +248,15 @@ The scripts use a restaurant story so the flow reads without knowing the code. E
 
 The words: a **datapack** is the workspace. A **memory** belongs to your Meko user account; every agent you run can read it, and each row keeps the agent_id that wrote it. **Shared Knowledge** is the datapack's; everyone it is shared with can read it. **Promote** moves a memory into Shared Knowledge, one way, and needs an owner or maintainer key. A **trace** is the record of one run.
 
-## What it demonstrates
+## If you are an AI agent running this for a person
 
-**The code decides what is persisted.** Meko has two ways to write. `conversation_add_message` stores a turn in the trace and extracts memories from its input side only; the extractor rewrites what it reads and may keep nothing. `memory_add` stores your text as one memory, as written. The decisions live in the model's answer, so `record_decision()` writes them with `memory_add`; the model never touches Meko. The scripts still post each run to the trace with `conversation_add_message`, with a short label in `input` and the question in `output`, because a question in `input` becomes a memory of its own and outranks the real decisions in search.
+You can clone, install, edit `.env`, run the five commands, and read the output yourself. You cannot create the Meko user accounts, the datapack, the API keys, or share the datapack; those happen in the portal at [cloud.mekodata.ai](https://cloud.mekodata.ai), so ask the person for them. The portal steps are written into Run it at the point where each is needed. What you need from them:
 
-**Memory is per Meko user account, labeled by agent.** Step 2 reads step 1's records because both run in Meko user 1's account; the agent_id on each row is a label, not a wall. Step 3 reads nothing because it runs in Meko user 2's account.
+1. A Meko account at [cloud.mekodata.ai](https://cloud.mekodata.ai), a datapack in it, and an API key. Ask for the key and the datapack's UUID (the id on the datapack's page, not its name).
+2. For runs 3 and 5, a second Meko user account with its own API key, and the datapack shared with it. If they do not have one, run every step on the one key. Run 3 then prints the menu straight away, with each dish labeled `(memory)` rather than `(Shared Knowledge)`, because your own memory_search already sees the decisions; the "nothing visible" moment needs the second Meko user account.
+3. Leave `MODEL_PROVIDER` empty unless they hand you a model key. The example answers cover everything below.
 
-**Promotion is the gate, and it can be code.** Nothing becomes team knowledge until something promotes it: a rule in `chef.py --promote`, a person in `promote.py`, or a click in the Learnings tab. It goes one way.
-
-**Every call is traced.** `meko.py` routes each call through one function that attaches the datapack, the agent_id, and the trace id.
+Compare each run with the expected output in the Run section. If it differs, check Troubleshooting before changing code.
 
 ## Use a model instead of the example answers
 
