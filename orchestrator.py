@@ -38,8 +38,9 @@ def judged_by_model(text: str) -> tuple[bool, str]:
     from strands import Agent
     from meko_client import make_model
 
-    raw = str(Agent(model=make_model(), system_prompt=JUDGE)(text)).strip()
-    verdict = json.loads(raw.removeprefix("```json").removesuffix("```"))
+    raw = str(Agent(model=make_model(), system_prompt=JUDGE)(text))
+    start, end = raw.find("{"), raw.rfind("}")  # the JSON object, whatever surrounds it
+    verdict = json.loads(raw[start:end + 1])
     return bool(verdict["promote"]), verdict["why"]
 
 

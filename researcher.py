@@ -28,6 +28,14 @@ def ask_model(question: str) -> str:
     return str(agent(question))
 
 
+def parse_findings(raw: str) -> list[dict]:
+    """Pull the JSON list out of the model's answer, ignoring any prose or code fences around it."""
+    start, end = raw.find("["), raw.rfind("]")
+    if start == -1 or end == -1:
+        raise SystemExit("The model's answer had no JSON list in it. Run again.")
+    return json.loads(raw[start:end + 1])
+
+
 def record_decision(client, convo_id: str, d: dict) -> None:
     """Turn one finding into a single line of text and store it as written."""
     text = f"{d['kind'].upper()}: {d['text']} REASON: {d['reason']}"
@@ -38,8 +46,8 @@ def record_decision(client, convo_id: str, d: dict) -> None:
 
 
 def main() -> None:
-    raw = ask_model(QUESTION).strip().removeprefix("```json").removesuffix("```")
-    findings = json.loads(raw)
+    raw = ask_model(QUESTION)
+    findings = parse_findings(raw)
     source = "replayed from researcher_example.json" if not os.environ.get("MODEL_PROVIDER", "").strip() \
         else os.environ["MODEL_PROVIDER"]
 
