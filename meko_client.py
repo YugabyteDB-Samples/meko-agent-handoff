@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import os
 
-from mcp.client.streamable_http import streamablehttp_client
 from strands.tools.mcp import MCPClient
 
 
@@ -63,8 +62,10 @@ def make_meko_mcp_client() -> MCPClient:
     """
     url = os.environ.get("MEKO_MCP_URL", DEFAULT_MEKO_MCP_URL).strip() or DEFAULT_MEKO_MCP_URL
     headers = _auth_headers()
-    # streamablehttp_client is invoked lazily by MCPClient on first use.
-    return MCPClient(lambda: streamablehttp_client(url=url, headers=headers))
+    # Strands opens the Streamable HTTP transport itself, lazily, on first use. Its
+    # adapter works on both mcp 1.x (streamablehttp_client) and mcp 2.x
+    # (streamable_http_client), so this file does not import from mcp directly.
+    return MCPClient(url=url, headers=headers)
 
 
 def meko_env() -> dict[str, str]:
