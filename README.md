@@ -215,6 +215,6 @@ Set `MODEL_PROVIDER` in `.env` to `anthropic`, `bedrock`, or `vertex` and fill i
 
 ## Start over
 
-Promotion is one way, so an empty datapack means a new datapack. Create one at cloud.mekodata.ai, put its UUID in `MEKO_DATAPACK_ID` in both `.env` and `.env.teammate`, share it with the second Meko user account again (membership belongs to the datapack), and run step 3 once: zero and zero means it is clean. To remove single memories and keep the datapack, use `prune.py`. If a key appeared on screen, revoke it in the dashboard and create a new one; `.env` and `.env.teammate` are git-ignored.
+Promotion is one way, so an empty datapack means a new datapack. Create one at cloud.mekodata.ai, put its UUID in `MEKO_DATAPACK_ID` in both `.env` and `.env.teammate`, share it with the second Meko user account again (membership belongs to the datapack), and run step 3 once: `memory: 0 results` and `shared knowledge: 0 results` means it is clean. To remove single memories and keep the datapack, use `prune.py`. If a key appeared on screen, revoke it in the dashboard and create a new one; `.env` and `.env.teammate` are git-ignored.
 
 Questions and what you built go to the [Meko Discord](https://discord.gg/yugabyte).
