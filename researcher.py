@@ -6,11 +6,14 @@ from pathlib import Path
 from meko import call, log_turn, make_meko_mcp_client, open_trace
 
 SYSTEM = (
-    "You are a research agent for a Python HTTP client library. Answer the question, "
-    "then return ONLY a JSON list. Each item has: kind ('decision' or 'open_question'), "
-    "text, reason, and rejected (an alternative you ruled out, or null)."
+    "You are a research agent for a Python HTTP client library. Answer the question with "
+    "exactly three findings: the two decisions that matter most, then one question you "
+    "could not settle. Return ONLY a JSON list of three items. Each item has: kind "
+    "('decision' or 'open_question'), text, reason, and rejected (an alternative you "
+    "ruled out, or null)."
 )
 QUESTION = "How should http_client.py retry failed requests?"
+MAX_FINDINGS = 3  # the code holds the line even if the model does not
 # A recorded model answer to QUESTION. With no MODEL_PROVIDER set, the researcher
 # replays it instead of calling a model, so all you need is a Meko key.
 REPLAY_FILE = Path(__file__).with_name("researcher_example.json")
@@ -24,7 +27,7 @@ def ask_model(question: str) -> str:
     from meko_client import make_model
 
     # The model gets no Meko tools, so it cannot save anything. The code below does that.
-    agent = Agent(model=make_model(), system_prompt=SYSTEM)
+    agent = Agent(model=make_model(), system_prompt=SYSTEM, callback_handler=None)  # no streaming to the terminal
     return str(agent(question))
 
 
@@ -47,7 +50,7 @@ def record_decision(client, convo_id: str, d: dict) -> None:
 
 def main() -> None:
     raw = ask_model(QUESTION)
-    findings = parse_findings(raw)
+    findings = parse_findings(raw)[:MAX_FINDINGS]
     source = "replayed from researcher_example.json" if not os.environ.get("MODEL_PROVIDER", "").strip() \
         else os.environ["MODEL_PROVIDER"]
 
@@ -56,13 +59,13 @@ def main() -> None:
         convo_id = open_trace(client, "researcher: retry policy")
         log_turn(client, convo_id, "researcher run",
                  output=f"Question: {QUESTION}\n\nModel answer ({source}):\n{raw}",
-                 reasoning="The model answered; the code below writes every decision so the "
-                           "record does not depend on the model choosing to save it.",
+                 reasoning=f"The model answered; the code below writes the first {MAX_FINDINGS} "
+                           "findings so the record does not depend on the model choosing to save it.",
                  plan=["Ask the model for decisions, reasons, and rejected alternatives as JSON.",
                        "Write each one to memory with memory_add so the wording is kept.",
                        "Leave open questions private until someone settles them."])
         for d in findings:
-            record_decision(client, convo_id, d)  # the code writes every finding, every run
+            record_decision(client, convo_id, d)  # the code writes the findings, every run
 
 
 if __name__ == "__main__":

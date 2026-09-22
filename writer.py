@@ -70,7 +70,7 @@ def write(records: list[dict]) -> tuple[str, str]:
     from meko_client import make_model
 
     context = "\n".join(r["text"] for r in records)
-    agent = Agent(model=make_model())
+    agent = Agent(model=make_model(), callback_handler=None)  # no streaming to the terminal
     return str(agent(f"{TASK}\n\nDecisions already made on this project:\n{context}")), \
         f"written by the model ({os.environ['MODEL_PROVIDER']})"
 
