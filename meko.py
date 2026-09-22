@@ -15,8 +15,16 @@ load_dotenv(os.environ.get("ENV_FILE", ".env"), override=True)  # ENV_FILE=.env.
 
 from meko_client import make_meko_mcp_client  # unchanged from the sample repo
 
-DATAPACK_ID = os.environ["MEKO_DATAPACK_ID"]
+DATAPACK_ID = os.environ.get("MEKO_DATAPACK_ID", "").strip()
 AGENT_ID = os.environ["MEKO_AGENT_ID"]  # e.g. researcher:retry-demo
+
+try:
+    uuid.UUID(DATAPACK_ID)
+except ValueError:
+    raise SystemExit(
+        f"MEKO_DATAPACK_ID is {DATAPACK_ID!r}, which is not a datapack id. It needs the UUID "
+        "shown on the datapack's page at cloud.mekodata.ai, not the datapack's name."
+    )
 
 
 def call(client, tool: str, **arguments) -> dict:
@@ -29,8 +37,8 @@ def call(client, tool: str, **arguments) -> dict:
     text = "\n".join(c.get("text", "") for c in res.get("content", []) if "text" in c)
     if res.get("status") != "success":
         raise RuntimeError(f"Meko tool {tool} returned an error:\n{text or res}")
-    if "structuredContent" in res:  # mcp 2.x servers may return the payload here
-        return res["structuredContent"]
+    # The payload is the JSON in the text block. Meko also sends a structuredContent
+    # field, but it only wraps that same string as {"result": "..."}.
     try:
         return json.loads(text)
     except json.JSONDecodeError:
