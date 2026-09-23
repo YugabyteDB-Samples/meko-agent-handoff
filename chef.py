@@ -19,7 +19,11 @@ SYSTEM = (
 )
 QUESTION = "What should we add to the autumn menu?"
 QUERY = "autumn menu: the dishes decided for the starter, main, and dessert, the ingredients to buy for each, and what is still undecided"
-SHOPPING_QUERY = "what does the kitchen need to buy"  # so the kitchen's notes clear the search floor on the promote run
+# A fallback for the promote run. QUERY already returns the kitchen's INGREDIENTS
+# records, because it asks about ingredients. This second search covers a datapack
+# where one of them scores just under the 0.5 similarity floor and the first
+# search misses it.
+SHOPPING_QUERY = "what does the kitchen need to buy"
 MAX_FINDINGS = 4  # three dishes and one open question; the code holds the line even if the model does not
 
 # An example answer to QUESTION. With no MODEL_PROVIDER set, the chef uses it instead
